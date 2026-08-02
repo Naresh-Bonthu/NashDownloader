@@ -6,165 +6,202 @@
     <title>Nash Downloader</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+        input[type="range"] { accent-color: #0A84FF; }
+        /* Smooth Apple transitions and micro-interactions */
+        * { transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease; }
+        .interactive-scale:hover { transform: scale(1.01); }
+        .interactive-scale:active { transform: scale(0.99); }
     </style>
 </head>
-<body class="bg-[#121212] text-[#f5f5f7] h-screen flex overflow-hidden select-none">
+<body class="bg-[#000000] text-[#FFFFFF] h-screen flex overflow-hidden select-none">
 
-    <!-- Sidebar -->
-    <aside class="w-64 bg-[#1e1e20] border-r border-[#2c2c2e] flex flex-col justify-between p-6">
+    <!-- Sidebar (macOS Source List with depth) -->
+    <aside class="w-56 bg-[#111113] border-r border-white/[0.06] flex flex-col justify-between p-4 z-10 shadow-lg">
         <div>
-            <div class="flex items-center space-x-3 mb-10">
-                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20">⬇</div>
+            <!-- Branding -->
+            <div class="flex items-center space-x-2.5 px-3 mb-8 mt-2">
+                <div class="w-7 h-7 bg-[#0A84FF] rounded-lg flex items-center justify-center text-white text-xs font-semibold shadow-sm">
+                    ↓
+                </div>
                 <div>
-                    <h1 class="font-bold text-lg leading-tight">Nash</h1>
-                    <p class="text-xs text-[#98989f]">Downloader</p>
+                    <h1 class="font-semibold text-[13px] tracking-tight leading-none text-white">Nash</h1>
+                    <p class="text-[10px] text-[#B5B5BC] mt-0.5">Downloader</p>
                 </div>
             </div>
-            <nav class="space-y-1">
-                <a href="#" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl bg-blue-500/10 text-blue-400 font-semibold text-sm border border-blue-500/20">
-                    <span>📥</span><span>Download</span>
+
+            <!-- Navigation Links (Apple style subtle soft selection) -->
+            <nav class="space-y-0.5 text-[13px]">
+                <a href="#" class="flex items-center space-x-2.5 px-3 py-1.5 rounded-[8px] bg-white/[0.08] text-white font-medium shadow-sm">
+                    <span class="text-xs">📥</span><span>Download</span>
                 </a>
-                <a href="#" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-[#98989f] hover:bg-[#2c2c2e] hover:text-white text-sm font-medium transition">
-                    <span>⏱</span><span>History</span>
+                <a href="#" class="flex items-center space-x-2.5 px-3 py-1.5 rounded-[8px] text-[#B5B5BC] hover:text-white hover:bg-white/[0.04] font-normal">
+                    <span class="text-xs">⏱</span><span>History</span>
                 </a>
-                <a href="#" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-[#98989f] hover:bg-[#2c2c2e] hover:text-white text-sm font-medium transition">
-                    <span>⚙</span><span>Settings</span>
+                <a href="#" class="flex items-center space-x-2.5 px-3 py-1.5 rounded-[8px] text-[#B5B5BC] hover:text-white hover:bg-white/[0.04] font-normal">
+                    <span class="text-xs">⚙</span><span>Settings</span>
                 </a>
-                <a href="#" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-[#98989f] hover:bg-[#2c2c2e] hover:text-white text-sm font-medium transition">
-                    <span>ℹ</span><span>About</span>
+                <a href="#" class="flex items-center space-x-2.5 px-3 py-1.5 rounded-[8px] text-[#B5B5BC] hover:text-white hover:bg-white/[0.04] font-normal">
+                    <span class="text-xs">ℹ</span><span>About</span>
                 </a>
             </nav>
         </div>
-        <div class="bg-[#161618] border border-[#2c2c2e] rounded-xl p-3.5">
-            <div class="flex items-center space-x-2 text-xs font-semibold text-green-400 mb-1">
-                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                <span>All systems operational</span>
+
+        <!-- Compact macOS Status Widget -->
+        <div class="px-3 py-2 rounded-[10px] bg-white/[0.03] border border-white/[0.04] flex items-center space-x-2.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"></span>
+            <div class="min-w-0">
+                <p class="text-[11px] font-medium text-white leading-tight truncate">Ready</p>
+                <p class="text-[9px] text-[#B5B5BC] truncate">Everything looks good</p>
             </div>
-            <p class="text-[11px] text-[#98989f]">You're good to go!</p>
         </div>
     </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto p-10 bg-[#121212]">
+    <!-- Main Content Area with Centered 920px Content Column -->
+    <main class="flex-1 overflow-y-auto px-12 py-10 bg-[#000000] flex justify-center">
         
-        <div class="flex justify-between items-start mb-8">
-            <div>
-                <h2 class="text-3xl font-bold tracking-tight text-white">Nash Downloader</h2>
-                <p class="text-[#98989f] text-sm mt-1">Download videos effortlessly</p>
-            </div>
+        <div class="w-full max-w-[920px]">
+            
+            <!-- Header Section -->
+            <div class="flex justify-between items-start mb-10">
+                <div>
+                    <h2 class="text-[28px] font-semibold tracking-tight text-white leading-tight">Nash Downloader</h2>
+                    <p class="text-[#B5B5BC] text-[15px] font-normal mt-1">Download videos effortlessly</p>
+                </div>
 
-            <div id="active-download-card" class="hidden bg-[#1e1e20] border border-[#2c2c2e] shadow-2xl shadow-black/50 rounded-2xl p-4 w-80">
-                <div class="flex space-x-3">
-                    <div class="w-20 h-12 bg-[#2c2c2e] rounded-lg overflow-hidden flex-shrink-0">
-                        <img id="dl-thumb" src="" class="w-full h-full object-cover" alt="Thumbnail">
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <h4 id="dl-title" class="text-xs font-bold truncate text-white">Preparing download...</h4>
-                        <div class="flex justify-between text-[10px] text-[#98989f] mt-1">
-                            <span id="dl-stats">0 MB / 0 MB</span>
-                            <span id="dl-percent">0%</span>
+                <!-- Floating Active Download Card (Appears during download) -->
+                <div id="active-download-card" class="hidden bg-[#1C1C1E] border border-white/[0.08] shadow-2xl rounded-2xl p-3 w-72 backdrop-blur-xl">
+                    <div class="flex space-x-3">
+                        <div class="w-16 h-10 bg-[#2C2C2E] rounded-lg overflow-hidden flex-shrink-0">
+                            <img id="dl-thumb" src="" class="w-full h-full object-cover" alt="Thumbnail">
                         </div>
-                        <div class="w-full bg-[#2c2c2e] h-1.5 rounded-full mt-1.5 overflow-hidden">
-                            <div id="dl-progress-bar" class="bg-blue-500 h-full w-0 transition-all duration-200"></div>
+                        <div class="flex-1 min-w-0">
+                            <h4 id="dl-title" class="text-[11px] font-medium truncate text-white">Preparing...</h4>
+                            <div class="flex justify-between text-[10px] text-[#B5B5BC] mt-0.5">
+                                <span id="dl-stats">0 MB / s</span>
+                                <span id="dl-percent">0%</span>
+                            </div>
+                            <div class="w-full bg-[#2C2C2E] h-1 rounded-full mt-1.5 overflow-hidden">
+                                <div id="dl-progress-bar" class="bg-[#0A84FF] h-full w-0"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Card 1: URL -->
-        <div class="bg-[#1e1e20] border border-[#2c2c2e] shadow-lg rounded-2xl p-6 mb-6">
-            <div class="flex items-center space-x-3 mb-4">
-                <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">1</span>
-                <h3 class="font-bold text-base text-white">Video URL</h3>
-            </div>
-            <div class="relative flex items-center">
-                <input type="text" id="url-input" placeholder="Paste YouTube or Instagram link here..." oninput="onUrlChanged(this.value)"
-                    class="w-full bg-[#161618] border border-[#2c2c2e] text-white placeholder-[#68686f] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition pr-24">
-                <button onclick="pasteClipboard()" class="absolute right-2 px-4 py-1.5 bg-[#2c2c2e] border border-[#3a3a3c] hover:bg-[#3a3a3c] text-blue-400 font-semibold text-xs rounded-lg transition shadow-sm">
-                    Paste
-                </button>
-            </div>
-            <p id="fetch-status" class="text-xs text-[#98989f] mt-2 hidden">🔍 Fetching video info...</p>
-        </div>
-
-        <!-- Card 2: Options -->
-        <div class="bg-[#1e1e20] border border-[#2c2c2e] shadow-lg rounded-2xl p-6 mb-6">
-            <div class="flex items-center space-x-3 mb-4">
-                <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">2</span>
-                <h3 class="font-bold text-base text-white">Download Options</h3>
+            <!-- SECTION 1: Video URL -->
+            <div class="mb-8">
+                <label class="block text-[13px] font-medium text-[#B5B5BC] mb-2">Video URL</label>
+                <div class="relative flex items-center">
+                    <input type="text" id="url-input" placeholder="Paste YouTube or Instagram link here..." oninput="onUrlChanged(this.value)"
+                        class="w-full bg-[#1C1C1E] border border-white/[0.05] text-white placeholder-[#68686F] rounded-[12px] px-3.5 py-2.5 text-[13px] focus:outline-none focus:border-[#0A84FF] focus:ring-1 focus:ring-[#0A84FF]/30 transition pr-20 shadow-inner">
+                    <button onclick="pasteClipboard()" class="absolute right-1.5 px-3 py-1 bg-white/[0.06] hover:bg-white/[0.1] text-[#0A84FF] font-medium text-[12px] rounded-[9px] transition">
+                        Paste
+                    </button>
+                </div>
+                <p id="fetch-status" class="text-[11px] text-[#B5B5BC] mt-1.5 hidden">Fetching video details...</p>
             </div>
 
-            <div class="flex items-center justify-between">
+            <!-- Progressive Video Preview Panel (Revealed smoothly on link paste) -->
+            <div id="video-preview-panel" class="hidden mb-8 bg-[#1C1C1E]/60 border border-white/[0.06] rounded-[14px] p-4 backdrop-blur-md transition-all duration-300">
                 <div class="flex items-center space-x-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-[#98989f] mb-1.5">Format</label>
-                        <div class="bg-[#161618] p-1 rounded-xl flex space-x-1 border border-[#2c2c2e]">
-                            <button id="btn-video" onclick="setFormat('video')" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-[#2c2c2e] text-white shadow-sm transition">🎬 Video</button>
-                            <button id="btn-audio" onclick="setFormat('audio')" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-[#98989f] hover:text-white transition">🎵 Audio</button>
+                    <div class="w-28 h-16 bg-[#2C2C2E] rounded-[10px] overflow-hidden flex-shrink-0 shadow-sm">
+                        <img id="preview-thumb" src="" class="w-full h-full object-cover" alt="Video Thumbnail">
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 id="preview-title" class="text-[13px] font-medium text-white truncate">Video Title</h4>
+                        <p id="preview-uploader" class="text-[11px] text-[#B5B5BC] mt-0.5 truncate">Uploader Name</p>
+                        <div class="flex items-center space-x-3 mt-2 text-[11px] text-[#B5B5BC]">
+                            <span class="bg-white/[0.06] px-2 py-0.5 rounded-[6px] font-mono text-white" id="preview-duration">00:00</span>
+                            <span class="text-emerald-400 font-medium">Ready to download</span>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div class="h-[1px] bg-white/[0.06] mb-8"></div>
+
+            <!-- SECTION 2: Download Options (Unified Row Alignment) -->
+            <div class="mb-8 space-y-6">
+                <label class="block text-[13px] font-medium text-[#B5B5BC]">Download Options</label>
+                
+                <div class="grid grid-cols-3 gap-6 items-center">
+                    <!-- Format Column -->
                     <div>
-                        <label class="block text-xs font-semibold text-[#98989f] mb-1.5">Quality</label>
-                        <select id="quality-select" class="bg-[#161618] border border-[#2c2c2e] text-white rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-blue-500">
+                        <span class="block text-[11px] text-[#B5B5BC] mb-1.5">Format</span>
+                        <div class="flex items-center bg-[#1C1C1E] border border-white/[0.05] rounded-[12px] p-1">
+                            <button id="btn-video" onclick="setFormat('video')" class="flex-1 py-1 rounded-[9px] text-[12px] font-medium bg-[#2C2C2E] text-white shadow-sm transition">Video</button>
+                            <button id="btn-audio" onclick="setFormat('audio')" class="flex-1 py-1 rounded-[9px] text-[12px] font-medium text-[#B5B5BC] hover:text-white transition">Audio</button>
+                        </div>
+                    </div>
+
+                    <!-- Quality Column -->
+                    <div>
+                        <span class="block text-[11px] text-[#B5B5BC] mb-1.5">Quality</span>
+                        <select id="quality-select" class="w-full bg-[#1C1C1E] border border-white/[0.05] text-white rounded-[12px] px-3.5 py-2 text-[12px] font-medium focus:outline-none focus:border-[#0A84FF] cursor-pointer">
                             <option>Best available</option>
                             <option>1080p</option>
                             <option>720p</option>
                         </select>
                     </div>
-                </div>
 
-                <div class="flex items-center space-x-3">
-                    <span class="text-xs font-semibold text-[#98989f]">Download portion</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="portion-toggle" onchange="togglePortion(this.checked)" class="sr-only peer">
-                        <div class="w-11 h-6 bg-[#2c2c2e] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#2c2c2e] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Real-time Sliders Container -->
-            <div id="slider-container" class="hidden mt-6 pt-4 border-t border-[#2c2c2e]">
-                <div class="flex items-center space-x-4">
-                    <span id="start-time-lbl" class="bg-[#161618] border border-[#2c2c2e] px-3 py-1 rounded-lg text-xs font-bold text-white">00:00</span>
-                    <input type="range" min="0" max="100" value="0" id="range-start" oninput="updateSliders()" class="flex-1 accent-blue-500 cursor-pointer">
-                    <input type="range" min="0" max="100" value="100" id="range-end" oninput="updateSliders()" class="flex-1 accent-blue-500 cursor-pointer">
-                    <span id="end-time-lbl" class="bg-[#161618] border border-[#2c2c2e] px-3 py-1 rounded-lg text-xs font-bold text-white">00:00</span>
-                </div>
-                <p id="selection-summary" class="text-center text-xs text-[#98989f] mt-3">Total duration: <span id="total-dur-lbl">00:00</span></p>
-            </div>
-        </div>
-
-        <!-- Card 3: Save Location -->
-        <div class="bg-[#1e1e20] border border-[#2c2c2e] shadow-lg rounded-2xl p-6 mb-8">
-            <div class="flex items-center space-x-3 mb-4">
-                <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">3</span>
-                <h3 class="font-bold text-base text-white">Save location</h3>
-            </div>
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <div class="text-2xl">📁</div>
+                    <!-- Portion Toggle Column -->
                     <div>
-                        <h4 id="save-folder-name" class="font-bold text-sm text-white">Downloads/Nash Downloader</h4>
-                        <p id="save-folder-path" class="text-xs text-[#98989f]">C:\Users\...\Downloads\NashDownloader</p>
+                        <span class="block text-[11px] text-[#B5B5BC] mb-1.5">Download Portion</span>
+                        <div class="flex items-center justify-between bg-[#1C1C1E] border border-white/[0.05] rounded-[12px] px-3 py-1.5">
+                            <span class="text-[12px] text-white">Custom clip</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="portion-toggle" onchange="togglePortion(this.checked)" class="sr-only peer">
+                                <div class="w-8 h-4.5 bg-[#2C2C2E] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#2C2C2E] after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-[#0A84FF]"></div>
+                            </label>
+                        </div>
                     </div>
                 </div>
-                <button onclick="changeFolder()" class="px-4 py-2 bg-[#2c2c2e] border border-[#3a3a3c] hover:bg-[#3a3a3c] text-white text-xs font-bold rounded-xl transition shadow-sm">
-                    Change
+
+                <!-- Sliders Container -->
+                <div id="slider-container" class="hidden pt-2 space-y-3 bg-[#1C1C1E]/40 border border-white/[0.04] p-4 rounded-[14px]">
+                    <div class="flex items-center space-x-3">
+                        <span id="start-time-lbl" class="text-[11px] font-mono text-[#B5B5BC]">00:00</span>
+                        <input type="range" min="0" max="100" value="0" id="range-start" oninput="updateSliders()" class="flex-1 cursor-pointer">
+                        <input type="range" min="0" max="100" value="100" id="range-end" oninput="updateSliders()" class="flex-1 cursor-pointer">
+                        <span id="end-time-lbl" class="text-[11px] font-mono text-[#B5B5BC]">00:00</span>
+                    </div>
+                    <p class="text-center text-[11px] text-[#B5B5BC]">Total clip length: <span id="total-dur-lbl" class="text-white font-mono">00:00</span></p>
+                </div>
+            </div>
+
+            <div class="h-[1px] bg-white/[0.06] mb-8"></div>
+
+            <!-- SECTION 3: Save Location (Multi-tier Typography) -->
+            <div class="mb-10 flex items-center justify-between">
+                <div>
+                    <label class="block text-[13px] font-medium text-[#B5B5BC] mb-1.5">Save Location</label>
+                    <div class="flex items-center space-x-3">
+                        <span class="text-lg">📁</span>
+                        <div>
+                            <h4 id="save-folder-name" class="font-medium text-[13px] text-white leading-tight">NashDownloader</h4>
+                            <p class="text-[11px] text-[#B5B5BC] mt-0.5">Downloads</p>
+                            <p id="save-folder-path" class="text-[10px] text-[#68686F] font-mono mt-0.5">C:\Users\...\Downloads\NashDownloader</p>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="changeFolder()" class="px-3.5 py-1.5 bg-[#1C1C1E] border border-white/[0.05] hover:bg-[#2C2C2E] text-white text-[12px] font-medium rounded-[10px] transition shadow-sm">
+                    Change...
                 </button>
             </div>
-        </div>
 
-        <!-- Action Button -->
-        <div class="flex flex-col items-center justify-center mb-10">
-            <button onclick="startDownload()" id="download-btn" class="w-96 bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/20 transition flex items-center justify-center space-x-2">
-                <span>⬇</span>
-                <span id="download-btn-text">Download Video</span>
-            </button>
+            <!-- Action Button Area (Compact 46px height, no heavy glow) -->
+            <div class="flex flex-col items-center">
+                <button onclick="startDownload()" id="download-btn" class="w-full max-w-[260px] bg-[#0A84FF] hover:bg-[#0071E3] interactive-scale text-white font-medium text-[13px] h-[46px] rounded-[12px] shadow-sm transition flex items-center justify-center space-x-2">
+                    <span>↓</span>
+                    <span id="download-btn-text">Download Video</span>
+                </button>
+            </div>
+
         </div>
     </main>
 
+    <!-- JavaScript Logic -->
     <script>
         let isAudioMode = false;
         let videoDuration = 0;
@@ -174,11 +211,11 @@
             const vBtn = document.getElementById('btn-video');
             const aBtn = document.getElementById('btn-audio');
             if(isAudioMode) {
-                vBtn.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-[#98989f] hover:text-white transition";
-                aBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold bg-[#2c2c2e] text-white shadow-sm transition";
+                vBtn.className = "flex-1 py-1 rounded-[9px] text-[12px] font-medium text-[#B5B5BC] hover:text-white transition";
+                aBtn.className = "flex-1 py-1 rounded-[9px] text-[12px] font-medium bg-[#2C2C2E] text-white shadow-sm transition";
             } else {
-                aBtn.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-[#98989f] hover:text-white transition";
-                vBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold bg-[#2c2c2e] text-white shadow-sm transition";
+                aBtn.className = "flex-1 py-1 rounded-[9px] text-[12px] font-medium text-[#B5B5BC] hover:text-white transition";
+                vBtn.className = "flex-1 py-1 rounded-[9px] text-[12px] font-medium bg-[#2C2C2E] text-white shadow-sm transition";
             }
         }
 
@@ -205,6 +242,13 @@
                         document.getElementById('range-end').value = videoDuration;
                         document.getElementById('total-dur-lbl').innerText = formatTime(videoDuration);
                         document.getElementById('end-time-lbl').innerText = formatTime(videoDuration);
+                        
+                        // Populate and reveal progressive video preview panel
+                        if (res.title) document.getElementById('preview-title').innerText = res.title;
+                        if (res.uploader) document.getElementById('preview-uploader').innerText = res.uploader;
+                        if (res.thumbnail) document.getElementById('preview-thumb').src = res.thumbnail;
+                        document.getElementById('preview-duration').innerText = formatTime(videoDuration);
+                        document.getElementById('video-preview-panel').classList.remove('hidden');
                     }
                 });
             }
