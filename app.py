@@ -85,9 +85,10 @@ class Api:
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
-            self.window.evaluate_js("downloadComplete(true)")
+            self.window.evaluate_js("downloadComplete(true, 'Success')")
         except Exception as e:
-            self.window.evaluate_js("downloadComplete(false)")
+            error_msg = str(e).replace("'", "").replace('"', "")
+            self.window.evaluate_js(f"downloadComplete(false, '{error_msg}')")
 
 def main():
     api = Api()
