@@ -61,8 +61,18 @@ class Api:
             daemon=True
         ).start()
 
+    def _format_time(self, secs):
+        """Convert seconds to MM:SS format for filename."""
+        mins = secs // 60
+        secs = secs % 60
+        return f"{mins:02d}_{secs:02d}"
+
     def _run_download(self, url, audio_mode, quality, clip_start=None, clip_end=None):
-        outtmpl = os.path.join(DEFAULT_OUTPUT, "%(uploader)s - %(title)s.%(ext)s")
+        # Build filename: include clip range so different clips from the same video don't overwrite
+        base_filename = "%(uploader)s - %(title)s"
+        if clip_start is not None and clip_end is not None:
+            base_filename += f" [{self._format_time(int(clip_start))}-{self._format_time(int(clip_end))}]"
+        outtmpl = os.path.join(DEFAULT_OUTPUT, base_filename + ".%(ext)s")
         os.makedirs(DEFAULT_OUTPUT, exist_ok=True)
 
         def hook(d):
@@ -72,13 +82,17 @@ class Api:
                 title = d.get('info_dict', {}).get('title', 'Video')
                 self._safe_eval('updateProgress', pct, speed, title)
             elif d['status'] == 'finished':
-                self._safe_eval('updateProgress', '100', 'Finishing up...', d.get('info_dict', {}).get('title', 'Video'))
+                # Download phase finished, now moving to postprocessing (ffmpeg merge/trim/extract)
+                # Don't show 100% yet — that's misleading since ffmpeg still needs to run
+                self._safe_eval('updateProgress', '95', 'Merging with ffmpeg...', d.get('info_dict', {}).get('title', 'Video'))
 
         def pp_hook(d):
-            # Fires during ffmpeg merge/trim/audio-extract steps, which have no
-            # percentage of their own - let the user know it's still working.
+            # Postprocessor hook: fires during ffmpeg merge/trim/audio-extract steps
             if d.get('status') == 'started':
-                self._safe_eval('updateProgress', '100', 'Processing...', 'Merging / trimming with ffmpeg')
+                self._safe_eval('updateProgress', '98', 'Processing...', 'Finalizing video')
+            elif d.get('status') == 'finished':
+                # Postprocessing is truly done now
+                self._safe_eval('updateProgress', '100', 'Complete!', d.get('info_dict', {}).get('title', 'Video'))
 
         ydl_opts = {
             'outtmpl': outtmpl,
