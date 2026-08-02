@@ -8,6 +8,44 @@
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif; }
         input[type="range"] { accent-color: #0A84FF; }
+
+        /* Dual-handle range slider: both inputs sit on top of each other.
+           The invisible track/background lets clicks pass through everywhere
+           except directly on a thumb, so the two handles feel independent. */
+        .range-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            pointer-events: none;
+            margin: 0;
+            top: 0;
+            height: 100%;
+        }
+        .range-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            pointer-events: auto;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            border: 2px solid #0A84FF;
+            cursor: pointer;
+            margin-top: 0;
+        }
+        .range-thumb::-moz-range-thumb {
+            pointer-events: auto;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            border: 2px solid #0A84FF;
+            cursor: pointer;
+        }
+        .range-thumb::-webkit-slider-runnable-track,
+        .range-thumb::-moz-range-track {
+            background: transparent;
+        }
         /* Smooth Apple transitions and micro-interactions */
         * { transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease; }
         .interactive-scale:hover { transform: scale(1.01); }
@@ -157,10 +195,19 @@
 
                 <div id="slider-container" class="hidden pt-2 space-y-3 bg-[#1C1C1E]/40 border border-white/[0.04] p-4 rounded-[14px]">
                     <div class="flex items-center space-x-3">
-                        <span id="start-time-lbl" class="text-[11px] font-mono text-[#B5B5BC]">00:00</span>
-                        <input type="range" min="0" max="100" value="0" id="range-start" oninput="updateSliders()" class="flex-1 cursor-pointer">
-                        <input type="range" min="0" max="100" value="100" id="range-end" oninput="updateSliders()" class="flex-1 cursor-pointer">
-                        <span id="end-time-lbl" class="text-[11px] font-mono text-[#B5B5BC]">00:00</span>
+                        <span id="start-time-lbl" class="text-[11px] font-mono text-[#B5B5BC] w-9">00:00</span>
+                        <!-- Real dual-handle range slider: both inputs share the same track,
+                             stacked via absolute positioning, so the two thumbs move on one
+                             visible line instead of on two separate full-width bars. -->
+                        <div class="relative flex-1 h-4 flex items-center">
+                            <div class="absolute w-full h-1 bg-[#2C2C2E] rounded-full"></div>
+                            <div id="range-fill" class="absolute h-1 bg-[#0A84FF] rounded-full"></div>
+                            <input type="range" min="0" max="100" value="0" id="range-start" oninput="updateSliders()"
+                                class="range-thumb absolute w-full cursor-pointer">
+                            <input type="range" min="0" max="100" value="100" id="range-end" oninput="updateSliders()"
+                                class="range-thumb absolute w-full cursor-pointer">
+                        </div>
+                        <span id="end-time-lbl" class="text-[11px] font-mono text-[#B5B5BC] w-9">00:00</span>
                     </div>
                     <p class="text-center text-[11px] text-[#B5B5BC]">Total clip length: <span id="total-dur-lbl" class="text-white font-mono">00:00</span></p>
                 </div>
@@ -206,12 +253,17 @@
             isAudioMode = (mode === 'audio');
             const vBtn = document.getElementById('btn-video');
             const aBtn = document.getElementById('btn-audio');
+            const qualitySelect = document.getElementById('quality-select');
             if(isAudioMode) {
                 vBtn.className = "flex-1 py-1 rounded-[9px] text-[12px] font-medium text-[#B5B5BC] hover:text-white transition";
                 aBtn.className = "flex-1 py-1 rounded-[9px] text-[12px] font-medium bg-[#2C2C2E] text-white shadow-sm transition";
+                qualitySelect.disabled = true;
+                qualitySelect.classList.add('opacity-40', 'cursor-not-allowed');
             } else {
                 aBtn.className = "flex-1 py-1 rounded-[9px] text-[12px] font-medium text-[#B5B5BC] hover:text-white transition";
                 vBtn.className = "flex-1 py-1 rounded-[9px] text-[12px] font-medium bg-[#2C2C2E] text-white shadow-sm transition";
+                qualitySelect.disabled = false;
+                qualitySelect.classList.remove('opacity-40', 'cursor-not-allowed');
             }
         }
 
@@ -225,39 +277,72 @@
             return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
         }
 
+        let urlFetchTimer = null;
+
         function onUrlChanged(url) {
-            if (url.startsWith('http') && window.pywebview) {
-                const status = document.getElementById('fetch-status');
-                status.classList.remove('hidden');
-                window.pywebview.api.get_video_info(url).then(res => {
-                    status.classList.add('hidden');
-                    if (res && res.duration) {
-                        videoDuration = res.duration;
-                        document.getElementById('range-start').max = videoDuration;
-                        document.getElementById('range-end').max = videoDuration;
-                        document.getElementById('range-end').value = videoDuration;
-                        document.getElementById('total-dur-lbl').innerText = formatTime(videoDuration);
-                        document.getElementById('end-time-lbl').innerText = formatTime(videoDuration);
-                        
-                        if (res.title) document.getElementById('preview-title').innerText = res.title;
-                        if (res.uploader) document.getElementById('preview-uploader').innerText = res.uploader;
-                        if (res.thumbnail) document.getElementById('preview-thumb').src = res.thumbnail;
-                        document.getElementById('preview-duration').innerText = formatTime(videoDuration);
-                        document.getElementById('video-preview-panel').classList.remove('hidden');
-                    }
-                });
+            // Debounce: wait until the user pauses typing for 500ms before
+            // hitting the network, instead of firing on every keystroke.
+            clearTimeout(urlFetchTimer);
+            if (!url.startsWith('http') || !window.pywebview) {
+                document.getElementById('video-preview-panel').classList.add('hidden');
+                return;
             }
+            urlFetchTimer = setTimeout(() => fetchVideoInfo(url), 500);
+        }
+
+        function fetchVideoInfo(url) {
+            const status = document.getElementById('fetch-status');
+            status.classList.remove('hidden');
+            window.pywebview.api.get_video_info(url).then(res => {
+                status.classList.add('hidden');
+                if (res && res.error) {
+                    document.getElementById('video-preview-panel').classList.add('hidden');
+                    return;
+                }
+                if (res && res.duration) {
+                    videoDuration = res.duration;
+                    document.getElementById('range-start').max = videoDuration;
+                    document.getElementById('range-end').max = videoDuration;
+                    document.getElementById('range-start').value = 0;
+                    document.getElementById('range-end').value = videoDuration;
+                    updateSliders();
+
+                    if (res.title) document.getElementById('preview-title').innerText = res.title;
+                    if (res.uploader) document.getElementById('preview-uploader').innerText = res.uploader;
+                    if (res.thumbnail) document.getElementById('preview-thumb').src = res.thumbnail;
+                    document.getElementById('preview-duration').innerText = formatTime(videoDuration);
+                    document.getElementById('video-preview-panel').classList.remove('hidden');
+                }
+            });
         }
 
         function updateSliders() {
-            let start = parseInt(document.getElementById('range-start').value);
-            let end = parseInt(document.getElementById('range-end').value);
+            const startInput = document.getElementById('range-start');
+            const endInput = document.getElementById('range-end');
+            let start = parseInt(startInput.value);
+            let end = parseInt(endInput.value);
+            const max = parseInt(startInput.max) || 100;
+
             if (start >= end) {
-                document.getElementById('range-start').value = end - 1;
-                start = end - 1;
+                if (document.activeElement === startInput) {
+                    start = Math.max(0, end - 1);
+                    startInput.value = start;
+                } else {
+                    end = Math.min(max, start + 1);
+                    endInput.value = end;
+                }
             }
+
             document.getElementById('start-time-lbl').innerText = formatTime(start);
             document.getElementById('end-time-lbl').innerText = formatTime(end);
+            document.getElementById('total-dur-lbl').innerText = formatTime(end - start);
+
+            // Move the blue fill bar to sit visually between the two handles
+            const fill = document.getElementById('range-fill');
+            const startPct = (start / max) * 100;
+            const endPct = (end / max) * 100;
+            fill.style.left = startPct + '%';
+            fill.style.width = (endPct - startPct) + '%';
         }
 
         async function pasteClipboard() {
@@ -295,8 +380,16 @@
             document.getElementById('download-btn-text').innerText = "Downloading...";
 
             const quality = document.getElementById('quality-select').value;
+            const clipEnabled = document.getElementById('portion-toggle').checked;
+            let clipStart = null;
+            let clipEnd = null;
+            if (clipEnabled) {
+                clipStart = parseInt(document.getElementById('range-start').value);
+                clipEnd = parseInt(document.getElementById('range-end').value);
+            }
+
             if (window.pywebview) {
-                window.pywebview.api.start_download(url, isAudioMode, quality);
+                window.pywebview.api.start_download(url, isAudioMode, quality, clipStart, clipEnd);
             }
         }
 
