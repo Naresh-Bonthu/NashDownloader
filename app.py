@@ -99,7 +99,7 @@ def main():
         url=f"file://{html_path}",
         width=950,
         height=720,
-        resizable=False,
+        resizable=True,  # <--- Enabled resizing and full-screen functionality
         background_color='#000000'
     )
     window.expose(api.get_video_info)
