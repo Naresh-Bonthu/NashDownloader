@@ -71,9 +71,7 @@
         <div>
             <!-- Branding -->
             <div class="flex items-center space-x-2.5 px-3 mb-8 mt-2">
-                <div class="w-7 h-7 bg-[#0A84FF] rounded-lg flex items-center justify-center text-white text-xs font-semibold shadow-sm">
-                    ↓
-                </div>
+                <img src="logo.png" alt="Nash Downloader" class="w-8 h-8 rounded-lg shadow-sm">
                 <div>
                     <h1 class="font-semibold text-[13px] tracking-tight leading-none text-white">Nash</h1>
                     <p class="text-[10px] text-[#B5B5BC] mt-0.5">Downloader</p>
@@ -307,7 +305,7 @@
             <div class="bg-[#1C1C1E] border border-white/[0.05] rounded-[12px] p-8 space-y-6">
                 <div>
                     <div class="flex items-center space-x-4 mb-6">
-                        <div class="w-16 h-16 bg-[#0A84FF] rounded-lg flex items-center justify-center text-2xl">↓</div>
+                        <img src="logo.png" alt="Nash Downloader" class="w-16 h-16 rounded-lg shadow-md">
                         <div>
                             <h3 class="text-[18px] font-semibold text-white">Nash Downloader</h3>
                             <p class="text-[13px] text-[#B5B5BC]">v1.0.0</p>
@@ -496,6 +494,9 @@
             }
         }
 
+        let downloadQueue = [];
+        let isDownloading = false;
+
         function startDownload() {
             const urlText = document.getElementById('url-input').value.trim();
             if(!urlText) { alert("Please enter at least one video URL."); return; }
@@ -513,32 +514,38 @@
                 clipEnd = parseInt(document.getElementById('range-end').value);
             }
 
-            // Disable the button and update UI
+            // Build queue: array of {url, quality, audioMode, clipStart, clipEnd}
+            downloadQueue = urls.map(url => ({
+                url: url,
+                quality: quality,
+                audioMode: isAudioMode,
+                clipStart: clipStart,
+                clipEnd: clipEnd,
+                index: urls.indexOf(url) + 1,
+                total: urls.length
+            }));
+
+            // Disable button and show card
             const btn = document.getElementById('download-btn');
             btn.disabled = true;
             btn.classList.add('opacity-50', 'cursor-not-allowed');
-            document.getElementById('download-btn-text').innerText = `Downloading ${urls.length} video${urls.length > 1 ? 's' : ''}...`;
 
-            // Show the active download card
             const card = document.getElementById('active-download-card');
             card.classList.remove('hidden');
             card.style.opacity = '1';
             card.style.transition = 'none';
 
-            if (window.pywebview) {
-                // Download each URL in sequence (one at a time, not in parallel)
-                downloadBatch(urls, 0, quality, isAudioMode, clipStart, clipEnd);
-            }
+            // Start processing queue
+            processNextDownload();
         }
 
-        function downloadBatch(urls, index, quality, audioMode, clipStart, clipEnd) {
-            if (index >= urls.length) {
-                // All done
+        function processNextDownload() {
+            if (downloadQueue.length === 0) {
+                // All downloads complete
                 const btn = document.getElementById('download-btn');
                 btn.disabled = false;
                 btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                document.getElementById('download-btn-text').innerText = "Download Video";
-                document.getElementById('dl-title').innerText = `✓ All ${urls.length} video${urls.length > 1 ? 's' : ''} complete!`;
+                document.getElementById('dl-title').innerText = `✓ All downloads complete!`;
                 setTimeout(() => {
                     const card = document.getElementById('active-download-card');
                     card.style.opacity = '0';
@@ -548,16 +555,58 @@
                 return;
             }
 
-            const previewThumb = document.getElementById('preview-thumb').src;
-            if (previewThumb) {
-                document.getElementById('dl-thumb').src = previewThumb;
-            }
+            const current = downloadQueue.shift();
+            const btn = document.getElementById('download-btn');
+            document.getElementById('download-btn-text').innerText = `Downloading ${current.index}/${current.total}...`;
 
+            // Fetch preview thumbnail for this URL
             if (window.pywebview) {
-                window.pywebview.api.start_download(urls[index], audioMode, quality, clipStart, clipEnd);
-                // After each download completes, we'd need a callback to move to the next one
-                // For now, this does one at a time but you'd need to modify the backend
-                // to signal completion. For initial release, just do first URL.
+                window.pywebview.api.get_video_info(current.url).then(info => {
+                    if (info && info.thumbnail) {
+                        document.getElementById('dl-thumb').src = info.thumbnail;
+                    }
+                    // Start the actual download
+                    if (window.pywebview) {
+                        window.pywebview.api.start_download(
+                            current.url,
+                            current.audioMode,
+                            current.quality,
+                            current.clipStart,
+                            current.clipEnd
+                        );
+                    }
+                });
+            }
+        }
+
+        // Override downloadComplete to trigger next download
+        const originalDownloadComplete = downloadComplete;
+        function downloadComplete(success, message) {
+            const btn = document.getElementById('download-btn');
+            const title = document.getElementById('dl-title');
+            
+            if (downloadQueue.length > 0) {
+                // More downloads in queue
+                const next = downloadQueue[0];
+                title.innerText = success 
+                    ? `✓ Downloaded (${downloadQueue.length} remaining)` 
+                    : `✗ Failed (${downloadQueue.length} remaining)`;
+                // Wait 1 second then start next download
+                setTimeout(processNextDownload, 1000);
+            } else {
+                // Last download complete
+                title.innerText = success ? "✓ Download Complete!" : `✗ Failed: ${message}`;
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                document.getElementById('download-btn-text').innerText = "Download Video";
+                
+                // Fade out card
+                setTimeout(() => {
+                    const card = document.getElementById('active-download-card');
+                    card.style.opacity = '0';
+                    card.style.transition = 'opacity 0.3s ease';
+                    setTimeout(() => card.classList.add('hidden'), 300);
+                }, 2000);
             }
         }
 
@@ -566,25 +615,6 @@
             document.getElementById('dl-progress-bar').style.width = percent + "%";
             if(title) document.getElementById('dl-title').innerText = title;
             document.getElementById('dl-stats').innerText = speed;
-        }
-
-        function downloadComplete(success, message) {
-            const btn = document.getElementById('download-btn');
-            btn.disabled = false;
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
-            document.getElementById('download-btn-text').innerText = "Download Video";
-            
-            const card = document.getElementById('active-download-card');
-            const title = document.getElementById('dl-title');
-            title.innerText = success ? "✓ Download Complete!" : `✗ Failed: ${message}`;
-            
-            // Keep the card visible for 2 seconds so user sees the success/error,
-            // then fade it out smoothly
-            setTimeout(() => {
-                card.style.opacity = '0';
-                card.style.transition = 'opacity 0.3s ease';
-                setTimeout(() => card.classList.add('hidden'), 300);
-            }, 2000);
         }
     </script>
 </body>
