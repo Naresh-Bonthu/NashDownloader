@@ -8,7 +8,7 @@ name: Build Windows EXE
 on:
   push:
     branches: [main, master]
-  workflow_dispatch: {} 
+  workflow_dispatch: {}
 
 jobs:
   build:
@@ -43,6 +43,7 @@ jobs:
           pyinstaller --noconfirm --onefile --windowed `
             --name "NashDownloader" `
             --add-data "index.html;." `
+            --add-data "logo.png;." `
             --add-binary "ffmpeg_bin\ffmpeg.exe;ffmpeg_bin" `
             --add-binary "ffmpeg_bin\ffprobe.exe;ffmpeg_bin" `
             app.py
