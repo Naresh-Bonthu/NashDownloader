@@ -50,6 +50,18 @@
         * { transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease; }
         .interactive-scale:hover { transform: scale(1.01); }
         .interactive-scale:active { transform: scale(0.99); }
+        
+        /* Spinner animation for fetching status */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Tab content transitions */
+        .tab-content { transition: opacity 0.2s ease; }
     </style>
 </head>
 <body class="bg-[#000000] text-[#FFFFFF] h-screen flex overflow-hidden select-none">
@@ -68,20 +80,20 @@
                 </div>
             </div>
 
-            <!-- Navigation Links -->
+            <!-- Navigation Links (Functional tabs) -->
             <nav class="space-y-0.5 text-[13px]">
-                <a href="#" class="flex items-center space-x-2.5 px-3 py-1.5 rounded-[8px] bg-white/[0.08] text-white font-medium shadow-sm">
+                <button onclick="switchTab('download')" class="tab-link w-full text-left flex items-center space-x-2.5 px-3 py-1.5 rounded-[8px] bg-white/[0.08] text-white font-medium shadow-sm" data-tab="download">
                     <span class="text-xs">📥</span><span>Download</span>
-                </a>
-                <a href="#" class="flex items-center space-x-2.5 px-3 py-1.5 rounded-[8px] text-[#B5B5BC] hover:text-white hover:bg-white/[0.04] font-normal">
+                </button>
+                <button onclick="switchTab('history')" class="tab-link w-full text-left flex items-center space-x-2.5 px-3 py-1.5 rounded-[8px] text-[#B5B5BC] hover:text-white hover:bg-white/[0.04] font-normal transition" data-tab="history">
                     <span class="text-xs">⏱</span><span>History</span>
-                </a>
-                <a href="#" class="flex items-center space-x-2.5 px-3 py-1.5 rounded-[8px] text-[#B5B5BC] hover:text-white hover:bg-white/[0.04] font-normal">
+                </button>
+                <button onclick="switchTab('settings')" class="tab-link w-full text-left flex items-center space-x-2.5 px-3 py-1.5 rounded-[8px] text-[#B5B5BC] hover:text-white hover:bg-white/[0.04] font-normal transition" data-tab="settings">
                     <span class="text-xs">⚙</span><span>Settings</span>
-                </a>
-                <a href="#" class="flex items-center space-x-2.5 px-3 py-1.5 rounded-[8px] text-[#B5B5BC] hover:text-white hover:bg-white/[0.04] font-normal">
+                </button>
+                <button onclick="switchTab('about')" class="tab-link w-full text-left flex items-center space-x-2.5 px-3 py-1.5 rounded-[8px] text-[#B5B5BC] hover:text-white hover:bg-white/[0.04] font-normal transition" data-tab="about">
                     <span class="text-xs">ℹ</span><span>About</span>
-                </a>
+                </button>
             </nav>
         </div>
 
@@ -98,7 +110,8 @@
     <!-- Main Content Area -->
     <main class="flex-1 overflow-y-auto px-12 py-10 bg-[#000000] flex justify-center">
         
-        <div class="w-full max-w-[920px]">
+        <!-- DOWNLOAD TAB -->
+        <div id="tab-download" class="tab-content w-full max-w-[920px]">
             
             <!-- Header Section -->
             <div class="flex justify-between items-start mb-10">
@@ -133,13 +146,17 @@
                 <p class="text-[11px] text-[#68686F] mb-2">Paste one or multiple YouTube/Instagram links (one per line)</p>
                 <div class="relative">
                     <textarea id="url-input" placeholder="https://youtube.com/watch?v=...&#10;https://youtube.com/watch?v=...&#10;https://instagram.com/p/..." 
+                        oninput="onUrlChanged(this.value)"
                         class="w-full bg-[#1C1C1E] border border-white/[0.05] text-white placeholder-[#68686F] rounded-[12px] px-3.5 py-3 text-[13px] focus:outline-none focus:border-[#0A84FF] focus:ring-1 focus:ring-[#0A84FF]/30 transition shadow-inner resize-none h-24"
                         style="font-family: 'Courier New', monospace;"></textarea>
                     <button onclick="pasteClipboard()" class="absolute right-2 bottom-2 px-3 py-1.5 bg-[#0A84FF] hover:bg-[#0071E3] text-white font-medium text-[11px] rounded-[8px] transition">
                         Paste
                     </button>
                 </div>
-                <p id="fetch-status" class="text-[11px] text-[#B5B5BC] mt-1.5 hidden">Fetching video details...</p>
+                <div id="fetch-status" class="flex items-center space-x-2 text-[11px] text-[#B5B5BC] mt-1.5 hidden">
+                    <div class="w-3 h-3 border-2 border-[#0A84FF] border-t-transparent rounded-full animate-spin"></div>
+                    <span>Fetching video details...</span>
+                </div>
             </div>
 
             <!-- Compact Video Preview (shows first URL only) -->
@@ -182,11 +199,12 @@
 
                     <div>
                         <span class="block text-[11px] text-[#B5B5BC] mb-1.5">Download Portion</span>
-                        <div class="flex items-center justify-between bg-[#1C1C1E] border border-white/[0.05] rounded-[12px] px-3 py-1.5">
-                            <span class="text-[12px] text-white">Custom clip</span>
+                        <div class="flex items-center justify-between bg-[#1C1C1E] border border-white/[0.05] rounded-[12px] px-3 py-2">
+                            <span class="text-[12px] text-white font-medium">Custom clip</span>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" id="portion-toggle" onchange="togglePortion(this.checked)" class="sr-only peer">
-                                <div class="w-8 h-4.5 bg-[#2C2C2E] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#2C2C2E] after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-[#0A84FF]"></div>
+                                <!-- Toggle switch: blue when on, grey when off -->
+                                <div class="w-9 h-5 bg-[#2C2C2E] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-4 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#2C2C2E] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0A84FF]"></div>
                             </label>
                         </div>
                     </div>
@@ -239,14 +257,120 @@
                     <span id="download-btn-text">Download Video</span>
                 </button>
             </div>
-
         </div>
+
+        <!-- HISTORY TAB -->
+        <div id="tab-history" class="tab-content hidden w-full max-w-[920px]">
+            <h2 class="text-[28px] font-semibold text-white mb-6">Download History</h2>
+            <div class="bg-[#1C1C1E] border border-white/[0.05] rounded-[12px] p-8 text-center">
+                <p class="text-[#B5B5BC] text-[14px]">📁 No downloads yet</p>
+                <p class="text-[#68686F] text-[12px] mt-2">Downloaded videos will appear here</p>
+            </div>
+        </div>
+
+        <!-- SETTINGS TAB -->
+        <div id="tab-settings" class="tab-content hidden w-full max-w-[920px]">
+            <h2 class="text-[28px] font-semibold text-white mb-6">Settings</h2>
+            <div class="space-y-6">
+                <div class="bg-[#1C1C1E] border border-white/[0.05] rounded-[12px] p-5">
+                    <h3 class="text-[14px] font-medium text-white mb-3">Download Folder</h3>
+                    <p class="text-[12px] text-[#B5B5BC] mb-3">Default location for downloaded videos:</p>
+                    <button onclick="changeFolder()" class="px-4 py-2 bg-[#0A84FF] hover:bg-[#0071E3] text-white text-[12px] font-medium rounded-[8px] transition">
+                        Change Location
+                    </button>
+                    <p id="settings-folder" class="text-[11px] text-[#68686F] font-mono mt-3">C:\Users\...\Downloads\NashDownloader</p>
+                </div>
+
+                <div class="bg-[#1C1C1E] border border-white/[0.05] rounded-[12px] p-5">
+                    <h3 class="text-[14px] font-medium text-white mb-3">Video Quality Preference</h3>
+                    <p class="text-[12px] text-[#B5B5BC] mb-3">Choose default quality for downloads:</p>
+                    <select class="w-full bg-[#2C2C2E] border border-white/[0.05] text-white rounded-[8px] px-3 py-2 text-[12px] focus:outline-none focus:border-[#0A84FF]">
+                        <option>Best available</option>
+                        <option>1080p</option>
+                        <option>720p</option>
+                    </select>
+                </div>
+
+                <div class="bg-[#1C1C1E] border border-white/[0.05] rounded-[12px] p-5">
+                    <h3 class="text-[14px] font-medium text-white mb-3">Notifications</h3>
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" checked class="w-4 h-4 rounded">
+                        <span class="text-[12px] text-[#B5B5BC]">Notify when download completes</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABOUT TAB -->
+        <div id="tab-about" class="tab-content hidden w-full max-w-[920px]">
+            <h2 class="text-[28px] font-semibold text-white mb-6">About Nash Downloader</h2>
+            <div class="bg-[#1C1C1E] border border-white/[0.05] rounded-[12px] p-8 space-y-6">
+                <div>
+                    <div class="flex items-center space-x-4 mb-6">
+                        <div class="w-16 h-16 bg-[#0A84FF] rounded-lg flex items-center justify-center text-2xl">↓</div>
+                        <div>
+                            <h3 class="text-[18px] font-semibold text-white">Nash Downloader</h3>
+                            <p class="text-[13px] text-[#B5B5BC]">v1.0.0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-[14px] font-medium text-white mb-2">Features</h4>
+                    <ul class="space-y-2 text-[12px] text-[#B5B5BC]">
+                        <li>✓ Download YouTube & Instagram videos at highest quality</li>
+                        <li>✓ Batch download multiple videos at once</li>
+                        <li>✓ Custom clip extraction (trim specific sections)</li>
+                        <li>✓ Audio extraction (save as MP3)</li>
+                        <li>✓ Fast parallel downloads with progress tracking</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-[14px] font-medium text-white mb-2">Built with</h4>
+                    <p class="text-[12px] text-[#B5B5BC]">Python • yt-dlp • FFmpeg • pywebview</p>
+                </div>
+
+                <div>
+                    <h4 class="text-[14px] font-medium text-white mb-2">Open Source</h4>
+                    <p class="text-[12px] text-[#B5B5BC] mb-3">Check out the code on GitHub</p>
+                    <a href="https://github.com/Naresh-Bonthu/NashDownloader" target="_blank" class="inline-block px-4 py-2 bg-[#0A84FF] hover:bg-[#0071E3] text-white text-[12px] font-medium rounded-[8px] transition">
+                        View on GitHub
+                    </a>
+                </div>
+
+                <div>
+                    <h4 class="text-[14px] font-medium text-white mb-2">License</h4>
+                    <p class="text-[12px] text-[#B5B5BC]">MIT License - Free to use and modify</p>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <!-- JavaScript Logic -->
     <script>
         let isAudioMode = false;
         let videoDuration = 0;
+
+        // Tab switching functionality
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            // Remove active styling from all nav buttons
+            document.querySelectorAll('.tab-link').forEach(link => {
+                link.classList.remove('bg-white/[0.08]', 'text-white', 'font-medium', 'shadow-sm');
+                link.classList.add('text-[#B5B5BC]', 'font-normal');
+            });
+
+            // Show selected tab
+            document.getElementById('tab-' + tabName).classList.remove('hidden');
+            // Add active styling to clicked button
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('bg-white/[0.08]', 'text-white', 'font-medium', 'shadow-sm');
+            document.querySelector(`[data-tab="${tabName}"]`).classList.remove('text-[#B5B5BC]', 'font-normal');
+        }
 
         function setFormat(mode) {
             isAudioMode = (mode === 'audio');
