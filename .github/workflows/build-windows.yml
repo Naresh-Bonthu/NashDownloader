@@ -1,0 +1,53 @@
+name: Build Windows EXE
+
+# Builds NashDownloader.exe on a Windows runner in the cloud —
+# no Windows machine needed on your end.
+# After this runs, go to the Actions tab -> this run -> Artifacts ->
+# download "NashDownloader-windows". It contains the ready-to-share .exe.
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pyinstaller yt-dlp
+
+      - name: Download ffmpeg (static Windows build)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path ffmpeg_bin | Out-Null
+          Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile ffmpeg.zip
+          Expand-Archive -Path ffmpeg.zip -DestinationPath ffmpeg_extracted
+          $bin = Get-ChildItem -Path ffmpeg_extracted -Recurse -Filter "ffmpeg.exe" | Select-Object -First 1
+          $dir = Split-Path $bin.FullName
+          Copy-Item "$dir\ffmpeg.exe" ffmpeg_bin\ffmpeg.exe
+          Copy-Item "$dir\ffprobe.exe" ffmpeg_bin\ffprobe.exe
+
+      - name: Build exe
+        run: |
+          pyinstaller --noconfirm --onefile --windowed `
+            --name "NashDownloader" `
+            --add-binary "ffmpeg_bin\ffmpeg.exe;ffmpeg_bin" `
+            --add-binary "ffmpeg_bin\ffprobe.exe;ffmpeg_bin" `
+            video_downloader.py
+
+      - name: Upload built exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: NashDownloader-windows
+          path: dist/NashDownloader.exe
