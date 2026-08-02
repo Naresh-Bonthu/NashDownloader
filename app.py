@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-"""
-Nash Downloader — PyWebView + Tailwind CSS Edition
-100% pixel-perfect match to modern UI design mockups.
-Requirements: pip install yt-dlp pywebview
-"""
-
 import os
 import sys
 import threading
@@ -33,6 +27,19 @@ class Api:
             return result[0]
         return None
 
+    def get_video_info(self, url):
+        """Fetches video title and exact duration in seconds"""
+        try:
+            ydl_opts = {'quiet': True, 'skip_download': True}
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                return {
+                    'title': info.get('title', 'Unknown Title'),
+                    'duration': info.get('duration', 0) # Duration in seconds
+                }
+        except Exception as e:
+            return {'error': str(e)}
+
     def start_download(self, url, audio_mode, quality):
         threading.Thread(target=self._run_download, args=(url, audio_mode, quality), daemon=True).start()
 
@@ -45,7 +52,6 @@ class Api:
                 pct = d.get('_percent_str', '0%').strip()
                 speed = d.get('_speed_str', '').strip()
                 title = d.get('info_dict', {}).get('title', 'Video')
-                # Clean up percentage string for JS
                 clean_pct = pct.replace('%', '')
                 try:
                     self.window.evaluate_js(f"updateProgress('{clean_pct}', '{speed}', '{title}')")
@@ -91,8 +97,9 @@ def main():
         width=950,
         height=720,
         resizable=False,
-        background_color='#f5f5f7'
+        background_color='#121212'
     )
+    window.expose(api.get_video_info)
     api.window = window
     webview.start()
 
