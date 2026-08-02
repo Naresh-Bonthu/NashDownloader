@@ -28,14 +28,16 @@ class Api:
         return None
 
     def get_video_info(self, url):
-        """Fetches video title and exact duration in seconds"""
+        """Fetches video title, uploader, thumbnail, and exact duration in seconds"""
         try:
             ydl_opts = {'quiet': True, 'skip_download': True}
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
                 return {
                     'title': info.get('title', 'Unknown Title'),
-                    'duration': info.get('duration', 0) # Duration in seconds
+                    'uploader': info.get('uploader', 'Unknown Channel'),
+                    'thumbnail': info.get('thumbnail', ''),
+                    'duration': info.get('duration', 0)
                 }
         except Exception as e:
             return {'error': str(e)}
@@ -83,9 +85,9 @@ class Api:
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
-            self.window.evaluate_js("downloadComplete(true, 'Success')")
+            self.window.evaluate_js("downloadComplete(true)")
         except Exception as e:
-            self.window.evaluate_js(f"downloadComplete(false, '{str(e)}')")
+            self.window.evaluate_js("downloadComplete(false)")
 
 def main():
     api = Api()
@@ -97,9 +99,11 @@ def main():
         width=950,
         height=720,
         resizable=False,
-        background_color='#121212'
+        background_color='#000000'
     )
     window.expose(api.get_video_info)
+    window.expose(api.select_folder)
+    window.expose(api.start_download)
     api.window = window
     webview.start()
 
