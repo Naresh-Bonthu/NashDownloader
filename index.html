@@ -4,126 +4,110 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nash Downloader</title>
-    <!-- Tailwind CSS CDN for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     </style>
 </head>
-<body class="bg-[#f5f5f7] text-[#1d1d1f] h-screen flex overflow-hidden select-none">
+<body class="bg-[#121212] text-[#f5f5f7] h-screen flex overflow-hidden select-none">
 
     <!-- Sidebar -->
-    <aside class="w-64 bg-[#ffffff] border-r border-[#e5e5ea] flex flex-col justify-between p-6">
+    <aside class="w-64 bg-[#1e1e20] border-r border-[#2c2c2e] flex flex-col justify-between p-6">
         <div>
-            <!-- App Branding -->
             <div class="flex items-center space-x-3 mb-10">
-                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20">
-                    ⬇
-                </div>
+                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20">⬇</div>
                 <div>
                     <h1 class="font-bold text-lg leading-tight">Nash</h1>
-                    <p class="text-xs text-[#86868b]">Downloader</p>
+                    <p class="text-xs text-[#98989f]">Downloader</p>
                 </div>
             </div>
-
-            <!-- Navigation Links -->
             <nav class="space-y-1">
-                <a href="#" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl bg-blue-50 text-blue-600 font-semibold text-sm">
+                <a href="#" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl bg-blue-500/10 text-blue-400 font-semibold text-sm border border-blue-500/20">
                     <span>📥</span><span>Download</span>
                 </a>
-                <a href="#" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-[#86868b] hover:bg-gray-50 text-sm font-medium transition">
+                <a href="#" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-[#98989f] hover:bg-[#2c2c2e] hover:text-white text-sm font-medium transition">
                     <span>⏱</span><span>History</span>
                 </a>
-                <a href="#" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-[#86868b] hover:bg-gray-50 text-sm font-medium transition">
+                <a href="#" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-[#98989f] hover:bg-[#2c2c2e] hover:text-white text-sm font-medium transition">
                     <span>⚙</span><span>Settings</span>
                 </a>
-                <a href="#" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-[#86868b] hover:bg-gray-50 text-sm font-medium transition">
+                <a href="#" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-[#98989f] hover:bg-[#2c2c2e] hover:text-white text-sm font-medium transition">
                     <span>ℹ</span><span>About</span>
                 </a>
             </nav>
         </div>
-
-        <!-- Footer System Status -->
-        <div class="bg-[#f9f9f9] border border-[#e5e5ea] rounded-xl p-3.5">
-            <div class="flex items-center space-x-2 text-xs font-semibold text-green-600 mb-1">
-                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+        <div class="bg-[#161618] border border-[#2c2c2e] rounded-xl p-3.5">
+            <div class="flex items-center space-x-2 text-xs font-semibold text-green-400 mb-1">
+                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                 <span>All systems operational</span>
             </div>
-            <p class="text-[11px] text-[#86868b]">You're good to go!</p>
+            <p class="text-[11px] text-[#98989f]">You're good to go!</p>
         </div>
     </aside>
 
-    <!-- Main Content Area -->
-    <main class="flex-1 overflow-y-auto p-10">
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-10 bg-[#121212]">
         
-        <!-- Top Header & Active Download Card Container -->
         <div class="flex justify-between items-start mb-8">
             <div>
-                <h2 class="text-3xl font-bold tracking-tight">Nash Downloader</h2>
-                <p class="text-[#86868b] text-sm mt-1">Download videos effortlessly</p>
+                <h2 class="text-3xl font-bold tracking-tight text-white">Nash Downloader</h2>
+                <p class="text-[#98989f] text-sm mt-1">Download videos effortlessly</p>
             </div>
 
-            <!-- Floating Active Download Card (Hidden by default until download starts) -->
-            <div id="active-download-card" class="hidden bg-white border border-[#e5e5ea] shadow-xl shadow-black/5 rounded-2xl p-4 w-80">
+            <div id="active-download-card" class="hidden bg-[#1e1e20] border border-[#2c2c2e] shadow-2xl shadow-black/50 rounded-2xl p-4 w-80">
                 <div class="flex space-x-3">
-                    <div class="w-20 h-12 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                    <div class="w-20 h-12 bg-[#2c2c2e] rounded-lg overflow-hidden flex-shrink-0">
                         <img id="dl-thumb" src="" class="w-full h-full object-cover" alt="Thumbnail">
                     </div>
                     <div class="flex-1 min-w-0">
-                        <h4 id="dl-title" class="text-xs font-bold truncate">Preparing download...</h4>
-                        <div class="flex justify-between text-[10px] text-[#86868b] mt-1">
+                        <h4 id="dl-title" class="text-xs font-bold truncate text-white">Preparing download...</h4>
+                        <div class="flex justify-between text-[10px] text-[#98989f] mt-1">
                             <span id="dl-stats">0 MB / 0 MB</span>
                             <span id="dl-percent">0%</span>
                         </div>
-                        <!-- Progress bar -->
-                        <div class="w-full bg-[#e5e5ea] h-1.5 rounded-full mt-1.5 overflow-hidden">
-                            <div id="dl-progress-bar" class="bg-blue-600 h-full w-0 transition-all duration-200"></div>
+                        <div class="w-full bg-[#2c2c2e] h-1.5 rounded-full mt-1.5 overflow-hidden">
+                            <div id="dl-progress-bar" class="bg-blue-500 h-full w-0 transition-all duration-200"></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Card 1: Video URL Input -->
-        <div class="bg-white border border-[#e5e5ea] shadow-sm rounded-2xl p-6 mb-6">
+        <!-- Card 1: URL -->
+        <div class="bg-[#1e1e20] border border-[#2c2c2e] shadow-lg rounded-2xl p-6 mb-6">
             <div class="flex items-center space-x-3 mb-4">
                 <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">1</span>
-                <h3 class="font-bold text-base">Video URL</h3>
+                <h3 class="font-bold text-base text-white">Video URL</h3>
             </div>
             <div class="relative flex items-center">
-                <input type="text" id="url-input" placeholder="Paste YouTube or Instagram link here..." 
-                    class="w-full bg-[#fafafa] border border-[#e5e5ea] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition pr-24">
-                <button onclick="pasteClipboard()" class="absolute right-2 px-4 py-1.5 bg-white border border-[#e5e5ea] hover:bg-gray-50 text-blue-600 font-semibold text-xs rounded-lg transition shadow-sm">
+                <input type="text" id="url-input" placeholder="Paste YouTube or Instagram link here..." oninput="onUrlChanged(this.value)"
+                    class="w-full bg-[#161618] border border-[#2c2c2e] text-white placeholder-[#68686f] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition pr-24">
+                <button onclick="pasteClipboard()" class="absolute right-2 px-4 py-1.5 bg-[#2c2c2e] border border-[#3a3a3c] hover:bg-[#3a3a3c] text-blue-400 font-semibold text-xs rounded-lg transition shadow-sm">
                     Paste
                 </button>
             </div>
-            <p id="url-status" class="text-xs text-[#86868b] mt-2 hidden flex items-center space-x-1">
-                <span class="text-green-500 font-bold">✓</span> <span id="url-status-text">Video detected successfully</span>
-            </p>
+            <p id="fetch-status" class="text-xs text-[#98989f] mt-2 hidden">🔍 Fetching video info...</p>
         </div>
 
-        <!-- Card 2: Download Options -->
-        <div class="bg-white border border-[#e5e5ea] shadow-sm rounded-2xl p-6 mb-6">
+        <!-- Card 2: Options -->
+        <div class="bg-[#1e1e20] border border-[#2c2c2e] shadow-lg rounded-2xl p-6 mb-6">
             <div class="flex items-center space-x-3 mb-4">
                 <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">2</span>
-                <h3 class="font-bold text-base">Download Options</h3>
+                <h3 class="font-bold text-base text-white">Download Options</h3>
             </div>
 
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
-                    <!-- Format Toggle Segment -->
                     <div>
-                        <label class="block text-xs font-semibold text-[#86868b] mb-1.5">Format</label>
-                        <div class="bg-[#f2f2f7] p-1 rounded-xl flex space-x-1">
-                            <button id="btn-video" onclick="setFormat('video')" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-white shadow-sm transition">🎬 Video</button>
-                            <button id="btn-audio" onclick="setFormat('audio')" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-[#86868b] hover:text-black transition">🎵 Audio</button>
+                        <label class="block text-xs font-semibold text-[#98989f] mb-1.5">Format</label>
+                        <div class="bg-[#161618] p-1 rounded-xl flex space-x-1 border border-[#2c2c2e]">
+                            <button id="btn-video" onclick="setFormat('video')" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-[#2c2c2e] text-white shadow-sm transition">🎬 Video</button>
+                            <button id="btn-audio" onclick="setFormat('audio')" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-[#98989f] hover:text-white transition">🎵 Audio</button>
                         </div>
                     </div>
-
-                    <!-- Quality Dropdown -->
                     <div>
-                        <label class="block text-xs font-semibold text-[#86868b] mb-1.5">Quality</label>
-                        <select id="quality-select" class="bg-white border border-[#e5e5ea] rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-blue-500">
+                        <label class="block text-xs font-semibold text-[#98989f] mb-1.5">Quality</label>
+                        <select id="quality-select" class="bg-[#161618] border border-[#2c2c2e] text-white rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-blue-500">
                             <option>Best available</option>
                             <option>1080p</option>
                             <option>720p</option>
@@ -131,99 +115,118 @@
                     </div>
                 </div>
 
-                <!-- Portion Toggle -->
                 <div class="flex items-center space-x-3">
-                    <span class="text-xs font-semibold text-[#86868b]">Download portion</span>
+                    <span class="text-xs font-semibold text-[#98989f]">Download portion</span>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="portion-toggle" onchange="togglePortion(this.checked)" class="sr-only peer">
-                        <div class="w-11 h-6 bg-[#e5e5ea] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#e5e5ea] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        <div class="w-11 h-6 bg-[#2c2c2e] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#2c2c2e] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                     </label>
                 </div>
             </div>
 
-            <!-- Slider Container (Hidden by default) -->
-            <div id="slider-container" class="hidden mt-6 pt-4 border-t border-[#e5e5ea]">
+            <!-- Real-time Sliders Container -->
+            <div id="slider-container" class="hidden mt-6 pt-4 border-t border-[#2c2c2e]">
                 <div class="flex items-center space-x-4">
-                    <span id="start-time-lbl" class="bg-[#f2f2f7] px-3 py-1 rounded-lg text-xs font-bold">00:04</span>
-                    <input type="range" min="0" max="300" value="0" id="range-start" class="flex-1 accent-blue-600 cursor-pointer">
-                    <input type="range" min="0" max="300" value="300" id="range-end" class="flex-1 accent-blue-600 cursor-pointer">
-                    <span id="end-time-lbl" class="bg-[#f2f2f7] px-3 py-1 rounded-lg text-xs font-bold">00:31</span>
+                    <span id="start-time-lbl" class="bg-[#161618] border border-[#2c2c2e] px-3 py-1 rounded-lg text-xs font-bold text-white">00:00</span>
+                    <input type="range" min="0" max="100" value="0" id="range-start" oninput="updateSliders()" class="flex-1 accent-blue-500 cursor-pointer">
+                    <input type="range" min="0" max="100" value="100" id="range-end" oninput="updateSliders()" class="flex-1 accent-blue-500 cursor-pointer">
+                    <span id="end-time-lbl" class="bg-[#161618] border border-[#2c2c2e] px-3 py-1 rounded-lg text-xs font-bold text-white">00:00</span>
                 </div>
-                <p id="selection-summary" class="text-center text-xs text-[#86868b] mt-3">Selected: 00:27 (27 seconds)</p>
+                <p id="selection-summary" class="text-center text-xs text-[#98989f] mt-3">Total duration: <span id="total-dur-lbl">00:00</span></p>
             </div>
         </div>
 
         <!-- Card 3: Save Location -->
-        <div class="bg-white border border-[#e5e5ea] shadow-sm rounded-2xl p-6 mb-8">
+        <div class="bg-[#1e1e20] border border-[#2c2c2e] shadow-lg rounded-2xl p-6 mb-8">
             <div class="flex items-center space-x-3 mb-4">
                 <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">3</span>
-                <h3 class="font-bold text-base">Save location</h3>
+                <h3 class="font-bold text-base text-white">Save location</h3>
             </div>
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
                     <div class="text-2xl">📁</div>
                     <div>
-                        <h4 id="save-folder-name" class="font-bold text-sm">Downloads/Nash Downloader</h4>
-                        <p id="save-folder-path" class="text-xs text-[#86868b]">C:\Users\...\Downloads\NashDownloader</p>
+                        <h4 id="save-folder-name" class="font-bold text-sm text-white">Downloads/Nash Downloader</h4>
+                        <p id="save-folder-path" class="text-xs text-[#98989f]">C:\Users\...\Downloads\NashDownloader</p>
                     </div>
                 </div>
-                <button onclick="changeFolder()" class="px-4 py-2 border border-[#e5e5ea] hover:bg-gray-50 text-xs font-bold rounded-xl transition shadow-sm">
+                <button onclick="changeFolder()" class="px-4 py-2 bg-[#2c2c2e] border border-[#3a3a3c] hover:bg-[#3a3a3c] text-white text-xs font-bold rounded-xl transition shadow-sm">
                     Change
                 </button>
             </div>
         </div>
 
-        <!-- Action Button Center -->
+        <!-- Action Button -->
         <div class="flex flex-col items-center justify-center mb-10">
-            <button onclick="startDownload()" id="download-btn" class="w-96 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/25 transition flex items-center justify-center space-x-2">
+            <button onclick="startDownload()" id="download-btn" class="w-96 bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/20 transition flex items-center justify-center space-x-2">
                 <span>⬇</span>
                 <span id="download-btn-text">Download Video</span>
             </button>
-            <div class="flex items-center space-x-4 text-[11px] text-[#86868b] mt-4 font-medium">
-                <span>🛡 Safe</span>
-                <span>•</span>
-                <span>⚡ Fast</span>
-                <span>•</span>
-                <span>✨ High Quality</span>
-            </div>
         </div>
-
     </main>
 
-    <!-- JavaScript Bridge to Python -->
     <script>
         let isAudioMode = false;
+        let videoDuration = 0;
 
         function setFormat(mode) {
             isAudioMode = (mode === 'audio');
             const vBtn = document.getElementById('btn-video');
             const aBtn = document.getElementById('btn-audio');
             if(isAudioMode) {
-                vBtn.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-[#86868b] hover:text-black transition";
-                aBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold bg-white shadow-sm transition";
+                vBtn.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-[#98989f] hover:text-white transition";
+                aBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold bg-[#2c2c2e] text-white shadow-sm transition";
             } else {
-                aBtn.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-[#86868b] hover:text-black transition";
-                vBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold bg-white shadow-sm transition";
+                aBtn.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-[#98989f] hover:text-white transition";
+                vBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold bg-[#2c2c2e] text-white shadow-sm transition";
             }
         }
 
         function togglePortion(show) {
-            const container = document.getElementById('slider-container');
-            if(show) {
-                container.classList.remove('hidden');
-            } else {
-                container.classList.add('hidden');
+            document.getElementById('slider-container').classList.toggle('hidden', !show);
+        }
+
+        function formatTime(secs) {
+            let m = Math.floor(secs / 60);
+            let s = Math.floor(secs % 60);
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function onUrlChanged(url) {
+            if (url.startsWith('http') && window.pywebview) {
+                const status = document.getElementById('fetch-status');
+                status.classList.remove('hidden');
+                window.pywebview.api.get_video_info(url).then(res => {
+                    status.classList.add('hidden');
+                    if (res && res.duration) {
+                        videoDuration = res.duration;
+                        document.getElementById('range-start').max = videoDuration;
+                        document.getElementById('range-end').max = videoDuration;
+                        document.getElementById('range-end').value = videoDuration;
+                        document.getElementById('total-dur-lbl').innerText = formatTime(videoDuration);
+                        document.getElementById('end-time-lbl').innerText = formatTime(videoDuration);
+                    }
+                });
             }
+        }
+
+        function updateSliders() {
+            let start = parseInt(document.getElementById('range-start').value);
+            let end = parseInt(document.getElementById('range-end').value);
+            if (start >= end) {
+                document.getElementById('range-start').value = end - 1;
+                start = end - 1;
+            }
+            document.getElementById('start-time-lbl').innerText = formatTime(start);
+            document.getElementById('end-time-lbl').innerText = formatTime(end);
         }
 
         async function pasteClipboard() {
             try {
                 const text = await navigator.clipboard.readText();
                 document.getElementById('url-input').value = text;
-                document.getElementById('url-status').classList.remove('hidden');
-            } catch (err) {
-                console.error('Failed to read clipboard');
-            }
+                onUrlChanged(text);
+            } catch (err) { console.error('Failed to read clipboard'); }
         }
 
         function changeFolder() {
@@ -239,12 +242,8 @@
 
         function startDownload() {
             const url = document.getElementById('url-input').value.trim();
-            if(!url) {
-                alert("Please enter a video URL first.");
-                return;
-            }
+            if(!url) { alert("Please enter a video URL first."); return; }
 
-            // Show active download card UI
             document.getElementById('active-download-card').classList.remove('hidden');
             const btn = document.getElementById('download-btn');
             btn.disabled = true;
@@ -252,13 +251,11 @@
             document.getElementById('download-btn-text').innerText = "Downloading...";
 
             const quality = document.getElementById('quality-select').value;
-            
             if (window.pywebview) {
                 window.pywebview.api.start_download(url, isAudioMode, quality);
             }
         }
 
-        // Called from Python to update progress live
         function updateProgress(percent, speed, title) {
             document.getElementById('dl-percent').innerText = percent + "%";
             document.getElementById('dl-progress-bar').style.width = percent + "%";
@@ -266,7 +263,7 @@
             document.getElementById('dl-stats').innerText = speed;
         }
 
-        function downloadComplete(success, message) {
+        function downloadComplete(success) {
             const btn = document.getElementById('download-btn');
             btn.disabled = false;
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
