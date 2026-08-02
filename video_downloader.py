@@ -6,13 +6,9 @@ Built on yt-dlp. Highest available quality, multiple links at once.
 Requirements:
     pip install yt-dlp
     ffmpeg installed and on PATH (for merging video+audio into one file)
-
-Run:
-    python video_downloader.py
 """
 
 import os
-import re
 import sys
 import threading
 import queue
@@ -29,14 +25,18 @@ except ImportError:
 
 DEFAULT_OUTPUT = os.path.join(os.path.expanduser("~"), "Downloads", "NashDownloader")
 
-# ---------- Palette ----------
-BG = "#f5f5f7"
+# ---------- Theme & Typography ----------
+# Using Segoe UI ensures a modern, clean look on Windows instead of the ugly legacy fallback.
+UI_FONT = "Segoe UI"
+MONO_FONT = "Consolas"
+
+BG = "#f3f3f5"
 CARD = "#ffffff"
 BORDER = "#e5e5ea"
 FG = "#1d1d1f"
 SECONDARY = "#86868b"
-ACCENT = "#0a5cff"
-ACCENT_HOVER = "#0e4fd6"
+ACCENT = "#0066cc"       # A slightly deeper, more premium Apple blue
+ACCENT_HOVER = "#005bb5"
 GREEN = "#28a745"
 RED = "#e0433f"
 
@@ -45,13 +45,11 @@ def resource_path(relative_path):
     base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
 
-
 def find_ffmpeg():
     bundled = resource_path(os.path.join("ffmpeg_bin", "ffmpeg.exe"))
     if os.path.exists(bundled):
         return os.path.dirname(bundled)
     return None
-
 
 def fmt_time(seconds):
     seconds = max(0, int(seconds))
@@ -66,10 +64,9 @@ def fmt_time(seconds):
 
 class Toggle(tk.Canvas):
     """A simple iOS-style toggle switch."""
-
     def __init__(self, parent, command=None, initial=False, **kwargs):
         super().__init__(parent, width=44, height=24, bg=parent["bg"],
-                          highlightthickness=0, cursor="hand2", **kwargs)
+                         highlightthickness=0, cursor="hand2", **kwargs)
         self.command = command
         self.state = initial
         self.bind("<Button-1>", self._flip)
@@ -77,7 +74,7 @@ class Toggle(tk.Canvas):
 
     def _draw(self):
         self.delete("all")
-        color = ACCENT if self.state else "#d1d1d6"
+        color = GREEN if self.state else "#d1d1d6"
         self.create_oval(2, 2, 22, 22, fill=color, outline=color)
         self.create_rectangle(12, 2, 32, 22, fill=color, outline=color)
         self.create_oval(22, 2, 42, 22, fill=color, outline=color)
@@ -93,14 +90,8 @@ class Toggle(tk.Canvas):
     def get(self):
         return self.state
 
-    def set(self, value):
-        self.state = bool(value)
-        self._draw()
-
-
 class RangeSlider(tk.Canvas):
-    """A dual-handle range slider (start/end) on a track, like a video trimmer."""
-
+    """A dual-handle range slider (start/end) on a track."""
     def __init__(self, parent, minimum=0, maximum=100, on_change=None, **kwargs):
         super().__init__(parent, height=32, bg=parent["bg"], highlightthickness=0, **kwargs)
         self.minimum = minimum
@@ -113,18 +104,6 @@ class RangeSlider(tk.Canvas):
         self.bind("<Button-1>", self._on_click)
         self.bind("<B1-Motion>", self._on_drag)
         self.bind("<ButtonRelease-1>", lambda e: setattr(self, "_dragging", None))
-
-    def set_range(self, minimum, maximum):
-        self.minimum = minimum
-        self.maximum = max(maximum, minimum + 1)
-        self.start_val = minimum
-        self.end_val = self.maximum
-        self._redraw()
-
-    def set_values(self, start, end):
-        self.start_val = max(self.minimum, min(start, self.maximum))
-        self.end_val = max(self.minimum, min(end, self.maximum))
-        self._redraw()
 
     def _val_to_x(self, val):
         w = max(self.winfo_width(), 20) - 20
@@ -141,11 +120,11 @@ class RangeSlider(tk.Canvas):
         self.delete("all")
         w = self.winfo_width() or 400
         y = 16
-        self.create_line(10, y, w - 10, y, fill="#d1d1d6", width=4, capstyle="round")
+        self.create_line(10, y, w - 10, y, fill="#e5e5ea", width=6, capstyle="round")
         x1, x2 = self._val_to_x(self.start_val), self._val_to_x(self.end_val)
-        self.create_line(x1, y, x2, y, fill=ACCENT, width=4, capstyle="round")
+        self.create_line(x1, y, x2, y, fill=ACCENT, width=6, capstyle="round")
         for x in (x1, x2):
-            self.create_oval(x - 8, y - 8, x + 8, y + 8, fill="white", outline=ACCENT, width=2)
+            self.create_oval(x - 9, y - 9, x + 9, y + 9, fill="white", outline=BORDER, width=1)
 
     def _on_click(self, event):
         x1, x2 = self._val_to_x(self.start_val), self._val_to_x(self.end_val)
@@ -153,8 +132,7 @@ class RangeSlider(tk.Canvas):
         self._on_drag(event)
 
     def _on_drag(self, event):
-        if not self._dragging:
-            return
+        if not self._dragging: return
         val = self._x_to_val(event.x)
         if self._dragging == "start":
             self.start_val = min(val, self.end_val - 1)
@@ -167,7 +145,6 @@ class RangeSlider(tk.Canvas):
 
 class HoverButton(tk.Button):
     """Button with a hover-color transition."""
-
     def __init__(self, parent, bg_normal, bg_hover, **kwargs):
         super().__init__(parent, bg=bg_normal, relief="flat", cursor="hand2", **kwargs)
         self.bg_normal = bg_normal
@@ -182,47 +159,48 @@ class DownloaderApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Nash Downloader")
-        self.root.geometry("880x760")
+        self.root.geometry("820x780")
         self.root.configure(bg=BG)
-        self.root.minsize(760, 640)
+        self.root.minsize(760, 720)
 
         self.log_queue = queue.Queue()
         self.output_dir = tk.StringVar(value=DEFAULT_OUTPUT)
         self.is_running = False
         self.cancel_flag = False
-        self.video_duration = 300  # default 5 min until we know real duration
+        self.video_duration = 300 
         self.audio_mode = False
 
         self._build_ui()
         self._poll_log_queue()
 
-    # ---------- UI ----------
+    # ---------- UI Builders ----------
 
     def _card(self, parent, **pack_kwargs):
         card = tk.Frame(parent, bg=CARD, highlightthickness=1, highlightbackground=BORDER)
-        card.pack(fill="x", padx=20, pady=(0, 14), **pack_kwargs)
+        card.pack(fill="x", padx=24, pady=(0, 16), **pack_kwargs)
         return card
 
     def _section_header(self, parent, number, text):
         row = tk.Frame(parent, bg=CARD)
-        row.pack(fill="x", padx=16, pady=(14, 10))
+        row.pack(fill="x", padx=16, pady=(16, 12))
+        
         badge = tk.Canvas(row, width=22, height=22, bg=CARD, highlightthickness=0)
         badge.create_oval(1, 1, 21, 21, fill=ACCENT, outline=ACCENT)
-        badge.create_text(11, 11, text=str(number), fill="white", font=("SF Pro Text", 10, "bold"))
-        badge.pack(side="left", padx=(0, 8))
-        tk.Label(row, text=text, font=("SF Pro Text", 13, "bold"), fg=FG, bg=CARD).pack(side="left")
+        badge.create_text(11, 11, text=str(number), fill="white", font=(UI_FONT, 10, "bold"))
+        badge.pack(side="left", padx=(0, 10))
+        
+        tk.Label(row, text=text, font=(UI_FONT, 12, "bold"), fg=FG, bg=CARD).pack(side="left")
         return row
 
     def _build_ui(self):
+        # Header
         header = tk.Frame(self.root, bg=BG)
-        header.pack(fill="x", padx=20, pady=(20, 16))
+        header.pack(fill="x", padx=24, pady=(24, 20))
 
         title_box = tk.Frame(header, bg=BG)
         title_box.pack(side="left")
-        tk.Label(title_box, text="Nash Downloader", font=("SF Pro Display", 22, "bold"),
-                 fg=FG, bg=BG).pack(anchor="w")
-        tk.Label(title_box, text="Download videos effortlessly", font=("SF Pro Text", 11),
-                 fg=SECONDARY, bg=BG).pack(anchor="w")
+        tk.Label(title_box, text="Nash Downloader", font=(UI_FONT, 20, "bold"), fg=FG, bg=BG).pack(anchor="w")
+        tk.Label(title_box, text="Download videos effortlessly", font=(UI_FONT, 11), fg=SECONDARY, bg=BG).pack(anchor="w", pady=(2,0))
 
         body = tk.Frame(self.root, bg=BG)
         body.pack(fill="both", expand=True)
@@ -232,129 +210,142 @@ class DownloaderApp:
         self._section_header(card1, 1, "Video URLs")
 
         url_row = tk.Frame(card1, bg=CARD)
-        url_row.pack(fill="x", padx=16, pady=(0, 6))
+        url_row.pack(fill="x", padx=16, pady=(0, 12))
 
+        # Text Box Container
         url_box_frame = tk.Frame(url_row, bg="#fafafa", highlightthickness=1, highlightbackground=BORDER)
         url_box_frame.pack(side="left", fill="both", expand=True)
-        self.url_box = tk.Text(url_box_frame, height=4, bg="#fafafa", fg=FG, insertbackground=FG,
-                                relief="flat", font=("Menlo", 10), wrap="none", padx=10, pady=8)
+        self.url_box = tk.Text(url_box_frame, height=3, bg="#fafafa", fg=FG, insertbackground=FG,
+                                relief="flat", font=(MONO_FONT, 10), wrap="none", padx=12, pady=10)
         self.url_box.pack(fill="both", expand=True)
 
-        paste_btn = HoverButton(url_row, "#ffffff", "#f2f2f7", text="📋 Paste",
-                                 fg=ACCENT, font=("SF Pro Text", 10, "bold"),
+        # Paste Button (Moved beside the text box)
+        paste_btn = HoverButton(url_row, "#ffffff", "#f0f0f5", text="📋 Paste",
+                                 fg=ACCENT, font=(UI_FONT, 10, "bold"),
                                  highlightthickness=1, highlightbackground=BORDER,
-                                 command=self._paste_clipboard, padx=12, pady=6)
-        paste_btn.pack(side="left", padx=(8, 0), anchor="n")
+                                 command=self._paste_clipboard, padx=14, pady=8)
+        paste_btn.pack(side="left", padx=(12, 0), anchor="n")
 
         tk.Label(card1, text="One link per line — batch multiple downloads at once.",
-                 font=("SF Pro Text", 9), fg=SECONDARY, bg=CARD).pack(anchor="w", padx=16, pady=(0, 14))
+                 font=(UI_FONT, 9), fg=SECONDARY, bg=CARD).pack(anchor="w", padx=16, pady=(0, 16))
 
-        # ---- Section 2: Download options ----
+        # ---- Section 2: Download Options ----
         card2 = self._card(body)
-        self._section_header(card2, 2, "Download Options")
+        self._section_header(card2, 2, "Download Settings")
 
         opts_row = tk.Frame(card2, bg=CARD)
-        opts_row.pack(fill="x", padx=16, pady=(0, 12))
+        opts_row.pack(fill="x", padx=16, pady=(0, 16))
 
-        fmt_box = tk.Frame(opts_row, bg=CARD)
+        # Grouped Format & Quality closer together
+        left_opts = tk.Frame(opts_row, bg=CARD)
+        left_opts.pack(side="left")
+
+        fmt_box = tk.Frame(left_opts, bg=CARD)
         fmt_box.pack(side="left")
-        tk.Label(fmt_box, text="Format", font=("SF Pro Text", 9), fg=SECONDARY, bg=CARD).pack(anchor="w")
+        tk.Label(fmt_box, text="Format", font=(UI_FONT, 9), fg=SECONDARY, bg=CARD).pack(anchor="w", pady=(0,4))
+        
         seg = tk.Frame(fmt_box, bg="#f2f2f7", highlightthickness=1, highlightbackground=BORDER)
-        seg.pack(pady=(4, 0))
+        seg.pack()
         self.video_seg_btn = tk.Button(seg, text="🎬 Video", relief="flat", cursor="hand2",
-                                        font=("SF Pro Text", 10, "bold"), padx=14, pady=6,
+                                        font=(UI_FONT, 9, "bold"), padx=12, pady=5,
                                         command=lambda: self._set_format("video"))
         self.audio_seg_btn = tk.Button(seg, text="🎵 Audio", relief="flat", cursor="hand2",
-                                        font=("SF Pro Text", 10, "bold"), padx=14, pady=6,
+                                        font=(UI_FONT, 9, "bold"), padx=12, pady=5,
                                         command=lambda: self._set_format("audio"))
         self.video_seg_btn.pack(side="left")
         self.audio_seg_btn.pack(side="left")
 
-        qual_box = tk.Frame(opts_row, bg=CARD)
-        qual_box.pack(side="left", padx=(24, 0))
-        tk.Label(qual_box, text="Quality", font=("SF Pro Text", 9), fg=SECONDARY, bg=CARD).pack(anchor="w")
+        qual_box = tk.Frame(left_opts, bg=CARD)
+        qual_box.pack(side="left", padx=(16, 0)) # Tightened gap
+        tk.Label(qual_box, text="Quality", font=(UI_FONT, 9), fg=SECONDARY, bg=CARD).pack(anchor="w", pady=(0,4))
+        
         self.quality_var = tk.StringVar(value="Best available")
         quality_menu = ttk.Combobox(qual_box, textvariable=self.quality_var, state="readonly",
                                      values=["Best available", "1080p", "720p", "480p", "360p"],
-                                     width=16, font=("SF Pro Text", 10))
-        quality_menu.pack(pady=(4, 0))
+                                     width=14, font=(UI_FONT, 9))
+        quality_menu.pack(fill="y")
 
+        # Portion Toggle pushed to the right
         portion_box = tk.Frame(opts_row, bg=CARD)
-        portion_box.pack(side="right")
-        tk.Label(portion_box, text="Download portion", font=("SF Pro Text", 10), fg=FG, bg=CARD).pack(side="left", padx=(0, 8))
+        portion_box.pack(side="right", anchor="s", pady=(0, 2))
+        tk.Label(portion_box, text="Download portion", font=(UI_FONT, 10), fg=FG, bg=CARD).pack(side="left", padx=(0, 8))
         self.portion_toggle = Toggle(portion_box, command=self._on_portion_toggle)
         self.portion_toggle.pack(side="left")
 
+        # Slider Section (Hidden by default)
         self.slider_frame = tk.Frame(card2, bg=CARD)
 
         slider_row = tk.Frame(self.slider_frame, bg=CARD)
-        slider_row.pack(fill="x", padx=16, pady=(4, 4))
+        slider_row.pack(fill="x", padx=16, pady=(8, 4))
 
-        self.start_display = tk.Label(slider_row, text="0:00", font=("SF Pro Text", 10, "bold"),
-                                       fg=FG, bg="#fafafa", padx=10, pady=6,
+        self.start_display = tk.Label(slider_row, text="0:00", font=(UI_FONT, 10, "bold"),
+                                       fg=FG, bg="#f9f9f9", padx=10, pady=4,
                                        highlightthickness=1, highlightbackground=BORDER)
         self.start_display.pack(side="left")
 
         self.range_slider = RangeSlider(slider_row, minimum=0, maximum=self.video_duration,
                                          on_change=self._on_slider_change)
-        self.range_slider.pack(side="left", fill="x", expand=True, padx=10)
+        self.range_slider.pack(side="left", fill="x", expand=True, padx=12)
 
-        self.end_display = tk.Label(slider_row, text=fmt_time(self.video_duration), font=("SF Pro Text", 10, "bold"),
-                                     fg=FG, bg="#fafafa", padx=10, pady=6,
+        self.end_display = tk.Label(slider_row, text=fmt_time(self.video_duration), font=(UI_FONT, 10, "bold"),
+                                     fg=FG, bg="#f9f9f9", padx=10, pady=4,
                                      highlightthickness=1, highlightbackground=BORDER)
         self.end_display.pack(side="left")
 
-        self.selected_label = tk.Label(self.slider_frame, text="", font=("SF Pro Text", 9),
-                                        fg=SECONDARY, bg=CARD)
-        self.selected_label.pack(pady=(2, 14))
+        self.selected_label = tk.Label(self.slider_frame, text="", font=(UI_FONT, 9), fg=SECONDARY, bg=CARD)
+        self.selected_label.pack(pady=(4, 16))
 
         self._set_format("video")
 
-        # ---- Section 3: Save location ----
+        # ---- Section 3: Save Location ----
         card3 = self._card(body)
         self._section_header(card3, 3, "Save Location")
 
         save_row = tk.Frame(card3, bg=CARD)
-        save_row.pack(fill="x", padx=16, pady=(0, 14))
+        save_row.pack(fill="x", padx=16, pady=(0, 16))
 
-        folder_icon = tk.Label(save_row, text="📁", font=("SF Pro Text", 16), bg=CARD)
-        folder_icon.pack(side="left", padx=(0, 10))
+        folder_icon = tk.Label(save_row, text="📁", font=(UI_FONT, 18), bg=CARD)
+        folder_icon.pack(side="left", padx=(0, 12))
 
         path_box = tk.Frame(save_row, bg=CARD)
         path_box.pack(side="left", fill="x", expand=True)
         self.path_label = tk.Label(path_box, text=os.path.basename(self.output_dir.get()) or "Downloads",
-                                    font=("SF Pro Text", 11, "bold"), fg=FG, bg=CARD, anchor="w")
+                                    font=(UI_FONT, 11, "bold"), fg=FG, bg=CARD, anchor="w")
         self.path_label.pack(fill="x", anchor="w")
         self.path_sub_label = tk.Label(path_box, text=self.output_dir.get(),
-                                        font=("SF Pro Text", 9), fg=SECONDARY, bg=CARD, anchor="w")
+                                        font=(UI_FONT, 9), fg=SECONDARY, bg=CARD, anchor="w")
         self.path_sub_label.pack(fill="x", anchor="w")
 
-        change_btn = HoverButton(save_row, "#ffffff", "#f2f2f7", text="Change", fg=FG,
-                                  font=("SF Pro Text", 10, "bold"), highlightthickness=1,
+        change_btn = HoverButton(save_row, "#ffffff", "#f0f0f5", text="Change", fg=FG,
+                                  font=(UI_FONT, 9, "bold"), highlightthickness=1,
                                   highlightbackground=BORDER, command=self._browse_folder,
                                   padx=14, pady=6)
         change_btn.pack(side="right")
 
-        # ---- Download button ----
-        btn_row = tk.Frame(body, bg=BG)
-        btn_row.pack(fill="x", padx=20, pady=(4, 6))
+        # ---- Download Button Area ----
+        # Wrapped in a centering frame to prevent the button from stretching too wide
+        btn_container = tk.Frame(body, bg=BG)
+        btn_container.pack(fill="x", pady=(10, 0))
 
-        self.start_btn = HoverButton(btn_row, ACCENT, ACCENT_HOVER, text="⬇  Download",
-                                      fg="white", font=("SF Pro Text", 12, "bold"),
-                                      command=self._start_download, pady=12)
-        self.start_btn.pack(fill="x")
+        btn_inner = tk.Frame(btn_container, bg=BG)
+        btn_inner.pack(anchor="center")
 
-        self.cancel_btn = HoverButton(btn_row, "#ffffff", "#f2f2f7", text="Cancel",
-                                       fg=RED, font=("SF Pro Text", 10, "bold"),
+        self.start_btn = HoverButton(btn_inner, ACCENT, ACCENT_HOVER, text="⬇  Download Videos",
+                                      fg="white", font=(UI_FONT, 12, "bold"),
+                                      command=self._start_download, padx=40, pady=10)
+        self.start_btn.pack(pady=(0, 6))
+
+        self.cancel_btn = HoverButton(btn_inner, "#ffffff", "#f5f5f5", text="Cancel",
+                                       fg=RED, font=(UI_FONT, 9, "bold"),
                                        highlightthickness=1, highlightbackground=BORDER,
-                                       command=self._cancel_download, state="disabled")
+                                       command=self._cancel_download, state="disabled", padx=20, pady=4)
+        
+        tk.Label(btn_container, text="🛡 Safe  ·  ⚡ Fast  ·  ✨ High Quality", font=(UI_FONT, 9),
+                 fg=SECONDARY, bg=BG).pack(pady=(4, 16))
 
-        tk.Label(btn_row, text="🛡 Safe  ·  ⚡ Fast  ·  ✨ High Quality", font=("SF Pro Text", 9),
-                 fg=SECONDARY, bg=BG).pack(pady=(8, 0))
-
-        # ---- Progress ----
+        # ---- Progress and Logs ----
         prog_frame = tk.Frame(self.root, bg=BG)
-        prog_frame.pack(fill="x", padx=20, pady=(4, 4))
+        prog_frame.pack(fill="x", padx=24)
 
         style = ttk.Style()
         style.theme_use("clam")
@@ -362,18 +353,17 @@ class DownloaderApp:
         self.progress = ttk.Progressbar(prog_frame, style="TProgressbar", mode="determinate")
         self.progress.pack(fill="x")
 
-        self.status_label = tk.Label(self.root, text="Ready", font=("SF Pro Text", 10),
-                                      fg=SECONDARY, bg=BG, anchor="w")
-        self.status_label.pack(fill="x", padx=20, pady=(2, 8))
+        self.status_label = tk.Label(self.root, text="Ready", font=(UI_FONT, 9), fg=SECONDARY, bg=BG, anchor="w")
+        self.status_label.pack(fill="x", padx=24, pady=(6, 8))
 
-        # ---- Log ----
         log_frame = tk.Frame(self.root, bg=CARD, highlightthickness=1, highlightbackground=BORDER)
-        log_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
-        self.log_box = tk.Text(log_frame, height=6, bg=CARD, fg="#555555", relief="flat",
-                                font=("Menlo", 9), state="disabled", padx=10, pady=8)
+        log_frame.pack(fill="both", expand=True, padx=24, pady=(0, 24))
+        self.log_box = tk.Text(log_frame, height=5, bg=CARD, fg="#555555", relief="flat",
+                                font=(MONO_FONT, 9), state="disabled", padx=12, pady=10)
         self.log_box.pack(fill="both", expand=True)
 
-    # ---------- Segmented control / toggle handlers ----------
+
+    # ---------- Handlers & Logic ----------
 
     def _set_format(self, mode):
         self.audio_mode = (mode == "audio")
@@ -399,7 +389,7 @@ class DownloaderApp:
     def _update_selected_label(self):
         start, end = self.range_slider.start_val, self.range_slider.end_val
         dur = int(end - start)
-        self.selected_label.config(text=f"Selected: {fmt_time(dur)} ({dur} seconds)")
+        self.selected_label.config(text=f"Selected duration: {fmt_time(dur)} ({dur}s)")
 
     def _paste_clipboard(self):
         try:
@@ -415,11 +405,8 @@ class DownloaderApp:
             self.path_label.config(text=os.path.basename(folder) or folder)
             self.path_sub_label.config(text=folder)
 
-    # ---------- Download logic ----------
-
     def _start_download(self):
-        if self.is_running:
-            return
+        if self.is_running: return
 
         urls_raw = self.url_box.get("1.0", "end").strip()
         urls = [u.strip() for u in urls_raw.splitlines() if u.strip()]
@@ -442,14 +429,13 @@ class DownloaderApp:
         self.is_running = True
         self.cancel_flag = False
         self.start_btn.config(state="disabled", text="Downloading…")
-        self.cancel_btn.pack(fill="x", pady=(8, 0))
+        self.cancel_btn.pack(pady=(6, 0)) 
         self.cancel_btn.config(state="normal")
         self.progress["value"] = 0
         self.progress["maximum"] = len(urls)
         self._log_clear()
 
-        thread = threading.Thread(target=self._run_batch, args=(urls, out_dir, clip_range), daemon=True)
-        thread.start()
+        threading.Thread(target=self._run_batch, args=(urls, out_dir, clip_range), daemon=True).start()
 
     def _cancel_download(self):
         self.cancel_flag = True
@@ -496,28 +482,23 @@ class DownloaderApp:
             "360p": "bestvideo[height<=360]+bestaudio/best[height<=360]",
         }
 
+        ydl_opts = {
+            "outtmpl": outtmpl,
+            "quiet": True,
+            "no_warnings": True,
+            "progress_hooks": [self._progress_hook],
+        }
+
         if self.audio_mode:
-            ydl_opts = {
-                "format": "bestaudio/best",
-                "outtmpl": outtmpl,
-                "postprocessors": [{
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "mp3",
-                    "preferredquality": "0",
-                }],
-                "quiet": True,
-                "no_warnings": True,
-                "progress_hooks": [self._progress_hook],
-            }
+            ydl_opts["format"] = "bestaudio/best"
+            ydl_opts["postprocessors"] = [{
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "mp3",
+                "preferredquality": "0",
+            }]
         else:
-            ydl_opts = {
-                "format": quality_map.get(self.quality_var.get(), quality_map["Best available"]),
-                "merge_output_format": "mp4",
-                "outtmpl": outtmpl,
-                "quiet": True,
-                "no_warnings": True,
-                "progress_hooks": [self._progress_hook],
-            }
+            ydl_opts["format"] = quality_map.get(self.quality_var.get(), quality_map["Best available"])
+            ydl_opts["merge_output_format"] = "mp4"
 
         if clip_range:
             start, end = clip_range
@@ -542,7 +523,7 @@ class DownloaderApp:
             speed = d.get("_speed_str", "").strip()
             self.log_queue.put(("status", f"  {pct} at {speed}"))
 
-    # ---------- Log helpers ----------
+    # ---------- Log Helpers ----------
 
     def _log_clear(self):
         self.log_box.config(state="normal")
@@ -567,7 +548,7 @@ class DownloaderApp:
                     self.progress["value"] = payload
                 elif kind == "done":
                     self.is_running = False
-                    self.start_btn.config(state="normal", text="⬇  Download")
+                    self.start_btn.config(state="normal", text="⬇  Download Videos")
                     self.cancel_btn.pack_forget()
         except queue.Empty:
             pass
@@ -578,7 +559,6 @@ def main():
     root = tk.Tk()
     app = DownloaderApp(root)
     root.mainloop()
-
 
 if __name__ == "__main__":
     main()
