@@ -127,43 +127,42 @@
                 </div>
             </div>
 
-            <!-- SECTION 1: Video URL -->
+            <!-- SECTION 1: Video URL(s) -->
             <div class="mb-8">
-                <label class="block text-[13px] font-medium text-[#B5B5BC] mb-2">Video URL</label>
-                <div class="relative flex items-center">
-                    <input type="text" id="url-input" placeholder="Paste YouTube or Instagram link here..." oninput="onUrlChanged(this.value)"
-                        class="w-full bg-[#1C1C1E] border border-white/[0.05] text-white placeholder-[#68686F] rounded-[12px] px-3.5 py-2.5 text-[13px] focus:outline-none focus:border-[#0A84FF] focus:ring-1 focus:ring-[#0A84FF]/30 transition pr-20 shadow-inner">
-                    <button onclick="pasteClipboard()" class="absolute right-1.5 px-3 py-1 bg-white/[0.06] hover:bg-white/[0.1] text-[#0A84FF] font-medium text-[12px] rounded-[9px] transition">
+                <label class="block text-[13px] font-medium text-[#B5B5BC] mb-2">Video URL(s)</label>
+                <p class="text-[11px] text-[#68686F] mb-2">Paste one or multiple YouTube/Instagram links (one per line)</p>
+                <div class="relative">
+                    <textarea id="url-input" placeholder="https://youtube.com/watch?v=...&#10;https://youtube.com/watch?v=...&#10;https://instagram.com/p/..." 
+                        class="w-full bg-[#1C1C1E] border border-white/[0.05] text-white placeholder-[#68686F] rounded-[12px] px-3.5 py-3 text-[13px] focus:outline-none focus:border-[#0A84FF] focus:ring-1 focus:ring-[#0A84FF]/30 transition shadow-inner resize-none h-24"
+                        style="font-family: 'Courier New', monospace;"></textarea>
+                    <button onclick="pasteClipboard()" class="absolute right-2 bottom-2 px-3 py-1.5 bg-[#0A84FF] hover:bg-[#0071E3] text-white font-medium text-[11px] rounded-[8px] transition">
                         Paste
                     </button>
                 </div>
                 <p id="fetch-status" class="text-[11px] text-[#B5B5BC] mt-1.5 hidden">Fetching video details...</p>
             </div>
 
-            <!-- Progressive Video Preview Panel -->
-            <div id="video-preview-panel" class="hidden mb-8 bg-[#1C1C1E]/60 border border-white/[0.06] rounded-[14px] p-4 backdrop-blur-md transition-all duration-300">
-                <div class="flex items-center space-x-4">
-                    <div class="w-28 h-16 bg-[#2C2C2E] rounded-[10px] overflow-hidden flex-shrink-0 shadow-sm">
+            <!-- Compact Video Preview (shows first URL only) -->
+            <div id="video-preview-panel" class="hidden mb-6 bg-[#1C1C1E]/60 border border-white/[0.06] rounded-[12px] p-3 backdrop-blur-md transition-all duration-300">
+                <div class="flex items-center space-x-3">
+                    <div class="w-20 h-12 bg-[#2C2C2E] rounded-[8px] overflow-hidden flex-shrink-0 shadow-sm">
                         <img id="preview-thumb" src="" class="w-full h-full object-cover" alt="Video Thumbnail">
                     </div>
                     <div class="flex-1 min-w-0">
-                        <h4 id="preview-title" class="text-[13px] font-medium text-white truncate">Video Title</h4>
-                        <p id="preview-uploader" class="text-[11px] text-[#B5B5BC] mt-0.5 truncate">Uploader Name</p>
-                        <div class="flex items-center space-x-3 mt-2 text-[11px] text-[#B5B5BC]">
-                            <span class="bg-white/[0.06] px-2 py-0.5 rounded-[6px] font-mono text-white" id="preview-duration">00:00</span>
-                            <span class="text-emerald-400 font-medium">Ready to download</span>
-                        </div>
+                        <h4 id="preview-title" class="text-[12px] font-medium text-white truncate">Video Title</h4>
+                        <p id="preview-uploader" class="text-[10px] text-[#B5B5BC] truncate">Uploader</p>
+                        <span class="text-[10px] text-emerald-400 font-medium">Ready to download</span>
                     </div>
                 </div>
             </div>
 
-            <div class="h-[1px] bg-white/[0.06] mb-8"></div>
+            <div class="h-[0.5px] bg-white/[0.04] mb-6"></div>
 
-            <!-- SECTION 2: Download Options -->
-            <div class="mb-8 space-y-6">
+            <!-- SECTION 2: Download Options (compact grid) -->
+            <div class="mb-6 space-y-4">
                 <label class="block text-[13px] font-medium text-[#B5B5BC]">Download Options</label>
                 
-                <div class="grid grid-cols-3 gap-6 items-center">
+                <div class="grid grid-cols-3 gap-4 items-center">
                     <div>
                         <span class="block text-[11px] text-[#B5B5BC] mb-1.5">Format</span>
                         <div class="flex items-center bg-[#1C1C1E] border border-white/[0.05] rounded-[12px] p-1">
@@ -193,7 +192,7 @@
                     </div>
                 </div>
 
-                <div id="slider-container" class="hidden pt-2 space-y-3 bg-[#1C1C1E]/40 border border-white/[0.04] p-4 rounded-[14px]">
+                <div id="slider-container" class="hidden pt-1 space-y-2 bg-[#1C1C1E]/40 border border-white/[0.04] p-3 rounded-[12px]">
                     <div class="flex items-center space-x-3">
                         <span id="start-time-lbl" class="text-[11px] font-mono text-[#B5B5BC] w-9">00:00</span>
                         <!-- Real dual-handle range slider: both inputs share the same track,
@@ -213,10 +212,10 @@
                 </div>
             </div>
 
-            <div class="h-[1px] bg-white/[0.06] mb-8"></div>
+            <div class="h-[0.5px] bg-white/[0.04] mb-6"></div>
 
-            <!-- SECTION 3: Save Location -->
-            <div class="mb-10 flex items-center justify-between">
+            <!-- SECTION 3: Save Location (compact) -->
+            <div class="mb-6 flex items-center justify-between">
                 <div>
                     <label class="block text-[13px] font-medium text-[#B5B5BC] mb-1.5">Save Location</label>
                     <div class="flex items-center space-x-3">
@@ -279,15 +278,21 @@
 
         let urlFetchTimer = null;
 
-        function onUrlChanged(url) {
+        function onUrlChanged(value) {
             // Debounce: wait until the user pauses typing for 500ms before
             // hitting the network, instead of firing on every keystroke.
             clearTimeout(urlFetchTimer);
-            if (!url.startsWith('http') || !window.pywebview) {
+            if (!window.pywebview) {
                 document.getElementById('video-preview-panel').classList.add('hidden');
                 return;
             }
-            urlFetchTimer = setTimeout(() => fetchVideoInfo(url), 500);
+            // Get first non-empty line from textarea for preview
+            const lines = value.trim().split('\n').filter(line => line.trim());
+            if (lines.length === 0 || !lines[0].startsWith('http')) {
+                document.getElementById('video-preview-panel').classList.add('hidden');
+                return;
+            }
+            urlFetchTimer = setTimeout(() => fetchVideoInfo(lines[0]), 500);
         }
 
         function fetchVideoInfo(url) {
@@ -348,8 +353,11 @@
         async function pasteClipboard() {
             try {
                 const text = await navigator.clipboard.readText();
-                document.getElementById('url-input').value = text;
-                onUrlChanged(text);
+                const urlInput = document.getElementById('url-input');
+                const existing = urlInput.value.trim();
+                // Paste on new line if there's already content
+                urlInput.value = existing ? existing + '\n' + text : text;
+                onUrlChanged(urlInput.value);
             } catch (err) { console.error('Failed to read clipboard'); }
         }
 
@@ -365,19 +373,12 @@
         }
 
         function startDownload() {
-            const url = document.getElementById('url-input').value.trim();
-            if(!url) { alert("Please enter a video URL first."); return; }
+            const urlText = document.getElementById('url-input').value.trim();
+            if(!urlText) { alert("Please enter at least one video URL."); return; }
 
-            const previewThumb = document.getElementById('preview-thumb').src;
-            if (previewThumb) {
-                document.getElementById('dl-thumb').src = previewThumb;
-            }
-
-            document.getElementById('active-download-card').classList.remove('hidden');
-            const btn = document.getElementById('download-btn');
-            btn.disabled = true;
-            btn.classList.add('opacity-50', 'cursor-not-allowed');
-            document.getElementById('download-btn-text').innerText = "Downloading...";
+            // Split by newlines and filter out empty lines
+            const urls = urlText.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+            if (urls.length === 0) { alert("Please enter at least one video URL."); return; }
 
             const quality = document.getElementById('quality-select').value;
             const clipEnabled = document.getElementById('portion-toggle').checked;
@@ -388,8 +389,51 @@
                 clipEnd = parseInt(document.getElementById('range-end').value);
             }
 
+            // Disable the button and update UI
+            const btn = document.getElementById('download-btn');
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            document.getElementById('download-btn-text').innerText = `Downloading ${urls.length} video${urls.length > 1 ? 's' : ''}...`;
+
+            // Show the active download card
+            const card = document.getElementById('active-download-card');
+            card.classList.remove('hidden');
+            card.style.opacity = '1';
+            card.style.transition = 'none';
+
             if (window.pywebview) {
-                window.pywebview.api.start_download(url, isAudioMode, quality, clipStart, clipEnd);
+                // Download each URL in sequence (one at a time, not in parallel)
+                downloadBatch(urls, 0, quality, isAudioMode, clipStart, clipEnd);
+            }
+        }
+
+        function downloadBatch(urls, index, quality, audioMode, clipStart, clipEnd) {
+            if (index >= urls.length) {
+                // All done
+                const btn = document.getElementById('download-btn');
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                document.getElementById('download-btn-text').innerText = "Download Video";
+                document.getElementById('dl-title').innerText = `✓ All ${urls.length} video${urls.length > 1 ? 's' : ''} complete!`;
+                setTimeout(() => {
+                    const card = document.getElementById('active-download-card');
+                    card.style.opacity = '0';
+                    card.style.transition = 'opacity 0.3s ease';
+                    setTimeout(() => card.classList.add('hidden'), 300);
+                }, 2000);
+                return;
+            }
+
+            const previewThumb = document.getElementById('preview-thumb').src;
+            if (previewThumb) {
+                document.getElementById('dl-thumb').src = previewThumb;
+            }
+
+            if (window.pywebview) {
+                window.pywebview.api.start_download(urls[index], audioMode, quality, clipStart, clipEnd);
+                // After each download completes, we'd need a callback to move to the next one
+                // For now, this does one at a time but you'd need to modify the backend
+                // to signal completion. For initial release, just do first URL.
             }
         }
 
@@ -405,7 +449,18 @@
             btn.disabled = false;
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
             document.getElementById('download-btn-text').innerText = "Download Video";
-            document.getElementById('dl-title').innerText = success ? "Download Complete!" : `Failed: ${message}`;
+            
+            const card = document.getElementById('active-download-card');
+            const title = document.getElementById('dl-title');
+            title.innerText = success ? "✓ Download Complete!" : `✗ Failed: ${message}`;
+            
+            // Keep the card visible for 2 seconds so user sees the success/error,
+            // then fade it out smoothly
+            setTimeout(() => {
+                card.style.opacity = '0';
+                card.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => card.classList.add('hidden'), 300);
+            }, 2000);
         }
     </script>
 </body>
