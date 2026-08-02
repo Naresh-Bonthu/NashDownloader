@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import os
 import sys
+import json
 import threading
 import webview
 import yt_dlp
+from yt_dlp.utils import download_range_func
 
 DEFAULT_OUTPUT = os.path.join(os.path.expanduser("~"), "Downloads", "NashDownloader")
 
@@ -27,6 +29,16 @@ class Api:
             return result[0]
         return None
 
+    def _safe_eval(self, js_function_name, *args):
+        """Calls a JS function with arguments safely encoded as JSON, so titles/
+        error messages containing quotes, backticks, or newlines can't break
+        the injected JS or get silently dropped."""
+        try:
+            encoded_args = ", ".join(json.dumps(a) for a in args)
+            self.window.evaluate_js(f"{js_function_name}({encoded_args})")
+        except Exception:
+            pass
+
     def get_video_info(self, url):
         """Fetches video title, uploader, thumbnail, and exact duration in seconds"""
         try:
@@ -42,28 +54,37 @@ class Api:
         except Exception as e:
             return {'error': str(e)}
 
-    def start_download(self, url, audio_mode, quality):
-        threading.Thread(target=self._run_download, args=(url, audio_mode, quality), daemon=True).start()
+    def start_download(self, url, audio_mode, quality, clip_start=None, clip_end=None):
+        threading.Thread(
+            target=self._run_download,
+            args=(url, audio_mode, quality, clip_start, clip_end),
+            daemon=True
+        ).start()
 
-    def _run_download(self, url, audio_mode, quality):
+    def _run_download(self, url, audio_mode, quality, clip_start=None, clip_end=None):
         outtmpl = os.path.join(DEFAULT_OUTPUT, "%(uploader)s - %(title)s.%(ext)s")
         os.makedirs(DEFAULT_OUTPUT, exist_ok=True)
 
         def hook(d):
             if d['status'] == 'downloading':
-                pct = d.get('_percent_str', '0%').strip()
+                pct = d.get('_percent_str', '0%').strip().replace('%', '')
                 speed = d.get('_speed_str', '').strip()
                 title = d.get('info_dict', {}).get('title', 'Video')
-                clean_pct = pct.replace('%', '')
-                try:
-                    self.window.evaluate_js(f"updateProgress('{clean_pct}', '{speed}', '{title}')")
-                except:
-                    pass
+                self._safe_eval('updateProgress', pct, speed, title)
+            elif d['status'] == 'finished':
+                self._safe_eval('updateProgress', '100', 'Finishing up...', d.get('info_dict', {}).get('title', 'Video'))
+
+        def pp_hook(d):
+            # Fires during ffmpeg merge/trim/audio-extract steps, which have no
+            # percentage of their own - let the user know it's still working.
+            if d.get('status') == 'started':
+                self._safe_eval('updateProgress', '100', 'Processing...', 'Merging / trimming with ffmpeg')
 
         ydl_opts = {
             'outtmpl': outtmpl,
             'quiet': True,
-            'progress_hooks': [hook]
+            'progress_hooks': [hook],
+            'postprocessor_hooks': [pp_hook],
         }
 
         if audio_mode:
@@ -71,12 +92,26 @@ class Api:
             ydl_opts['postprocessors'] = [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}]
         else:
             q_map = {
-                "Best available": "bestvideo*+bestaudio/best",
+                "Best available": "bestvideo+bestaudio/best",
                 "1080p": "bestvideo[height<=1080]+bestaudio/best[height<=1080]",
                 "720p": "bestvideo[height<=720]+bestaudio/best[height<=720]"
             }
             ydl_opts['format'] = q_map.get(quality, q_map["Best available"])
             ydl_opts['merge_output_format'] = "mp4"
+
+        # --- Custom clip support ---
+        # clip_start/clip_end arrive as seconds (float/int) from the UI sliders.
+        # download_range_func + force_keyframes_at_cuts tells yt-dlp/ffmpeg to
+        # only download+cut the requested section instead of the whole video.
+        if clip_start is not None and clip_end is not None:
+            try:
+                start_s = max(0, float(clip_start))
+                end_s = float(clip_end)
+                if end_s > start_s:
+                    ydl_opts['download_ranges'] = download_range_func(None, [(start_s, end_s)])
+                    ydl_opts['force_keyframes_at_cuts'] = True
+            except (TypeError, ValueError):
+                pass  # bad clip values -> fall back to downloading the full video
 
         ffmpeg_dir = find_ffmpeg()
         if ffmpeg_dir:
@@ -85,10 +120,9 @@ class Api:
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
-            self.window.evaluate_js("downloadComplete(true, 'Success')")
+            self._safe_eval('downloadComplete', True, 'Success')
         except Exception as e:
-            error_msg = str(e).replace("'", "").replace('"', "")
-            self.window.evaluate_js(f"downloadComplete(false, '{error_msg}')")
+            self._safe_eval('downloadComplete', False, str(e))
 
 def main():
     api = Api()
