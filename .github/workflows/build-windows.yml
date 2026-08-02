@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install pyinstaller yt-dlp
+          pip install pyinstaller yt-dlp pywebview
 
       - name: Download ffmpeg (static Windows build)
         shell: pwsh
@@ -42,9 +42,10 @@ jobs:
         run: |
           pyinstaller --noconfirm --onefile --windowed `
             --name "NashDownloader" `
+            --add-data "index.html;." `
             --add-binary "ffmpeg_bin\ffmpeg.exe;ffmpeg_bin" `
             --add-binary "ffmpeg_bin\ffprobe.exe;ffmpeg_bin" `
-            video_downloader.py
+            app.py
 
       - name: Upload built exe
         uses: actions/upload-artifact@v4
