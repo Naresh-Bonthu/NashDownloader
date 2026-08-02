@@ -38,14 +38,23 @@ jobs:
           Copy-Item "$dir\ffmpeg.exe" ffmpeg_bin\ffmpeg.exe
           Copy-Item "$dir\ffprobe.exe" ffmpeg_bin\ffprobe.exe
 
+      - name: Check files before build
+        run: |
+          dir
+          if (-Not (Test-Path "logo.png")) {
+            Write-Error "logo.png not found!"
+            exit 1
+          }
+          Write-Output "✓ All required files found"
+
       - name: Build exe
         run: |
           pyinstaller --noconfirm --onefile --windowed `
             --name "NashDownloader" `
-            --add-data "index.html;." `
-            --add-data "logo.png;." `
-            --add-binary "ffmpeg_bin\ffmpeg.exe;ffmpeg_bin" `
-            --add-binary "ffmpeg_bin\ffprobe.exe;ffmpeg_bin" `
+            --add-data "index.html:." `
+            --add-data "logo.png:." `
+            --add-binary "ffmpeg_bin\ffmpeg.exe:ffmpeg_bin" `
+            --add-binary "ffmpeg_bin\ffprobe.exe:ffmpeg_bin" `
             app.py
 
       - name: Upload built exe
