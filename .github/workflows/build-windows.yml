@@ -31,12 +31,41 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path ffmpeg_bin | Out-Null
-          Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile ffmpeg.zip
+
+          # Use GitHub-hosted FFmpeg builds instead of gyan.dev — GitHub's CDN
+          # is far more reliable than gyan.dev, which occasionally returns
+          # 503 Service Unavailable under load.
+          $ffmpegUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-win64-gpl.zip"
+
+          # Retry up to 5 times with backoff, in case of any transient network/host issue
+          $maxAttempts = 5
+          $success = $false
+          for ($i = 1; $i -le $maxAttempts; $i++) {
+            try {
+              Write-Output "Attempt $i of $maxAttempts : downloading FFmpeg..."
+              Invoke-WebRequest -Uri $ffmpegUrl -OutFile ffmpeg.zip -TimeoutSec 120
+              $success = $true
+              break
+            } catch {
+              Write-Warning "Download failed: $($_.Exception.Message)"
+              if ($i -lt $maxAttempts) {
+                $waitSeconds = 10 * $i
+                Write-Output "Retrying in $waitSeconds seconds..."
+                Start-Sleep -Seconds $waitSeconds
+              }
+            }
+          }
+          if (-Not $success) {
+            Write-Error "Failed to download FFmpeg after $maxAttempts attempts."
+            exit 1
+          }
+
           Expand-Archive -Path ffmpeg.zip -DestinationPath ffmpeg_extracted
           $bin = Get-ChildItem -Path ffmpeg_extracted -Recurse -Filter "ffmpeg.exe" | Select-Object -First 1
           $dir = Split-Path $bin.FullName
           Copy-Item "$dir\ffmpeg.exe" ffmpeg_bin\ffmpeg.exe
           Copy-Item "$dir\ffprobe.exe" ffmpeg_bin\ffprobe.exe
+          Write-Output "✓ FFmpeg ready"
 
       - name: Check files before build
         run: |
@@ -63,3 +92,4 @@ jobs:
         with:
           name: NashDownloader-windows
           path: dist/NashDownloader.exe
+          
