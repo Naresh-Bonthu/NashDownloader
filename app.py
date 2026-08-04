@@ -8,6 +8,21 @@ import yt_dlp
 from yt_dlp.utils import download_range_func
 
 DEFAULT_OUTPUT = os.path.join(os.path.expanduser("~"), "Downloads", "NashDownloader")
+CONFIG_PATH = os.path.join(os.path.expanduser("~"), ".nashdownloader_config.json")
+
+def load_config():
+    try:
+        with open(CONFIG_PATH, "r") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+def save_config(config):
+    try:
+        with open(CONFIG_PATH, "w") as f:
+            json.dump(config, f)
+    except OSError:
+        pass
 
 def resource_path(relative_path):
     base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
@@ -26,8 +41,20 @@ class Api:
     def select_folder(self):
         result = self.window.create_file_dialog(webview.FOLDER_DIALOG)
         if result:
-            return result[0]
+            chosen = result[0]
+            # Remember this choice so it's still selected next time the app opens
+            config = load_config()
+            config['save_folder'] = chosen
+            save_config(config)
+            return chosen
         return None
+
+    def get_settings(self):
+        """Called on app startup so the UI can show the previously-saved folder."""
+        config = load_config()
+        return {
+            'save_folder': config.get('save_folder') or DEFAULT_OUTPUT
+        }
 
     def _safe_eval(self, js_function_name, *args):
         """Calls a JS function with arguments safely encoded as JSON, so titles/
@@ -54,10 +81,10 @@ class Api:
         except Exception as e:
             return {'error': str(e)}
 
-    def start_download(self, url, audio_mode, quality, clip_start=None, clip_end=None):
+    def start_download(self, url, audio_mode, quality, clip_start=None, clip_end=None, save_folder=None):
         threading.Thread(
             target=self._run_download,
-            args=(url, audio_mode, quality, clip_start, clip_end),
+            args=(url, audio_mode, quality, clip_start, clip_end, save_folder),
             daemon=True
         ).start()
 
@@ -67,13 +94,17 @@ class Api:
         secs = secs % 60
         return f"{mins:02d}_{secs:02d}"
 
-    def _run_download(self, url, audio_mode, quality, clip_start=None, clip_end=None):
+    def _run_download(self, url, audio_mode, quality, clip_start=None, clip_end=None, save_folder=None):
+        # Use the user-selected folder if they picked one via "Change..." in
+        # Settings/Save Location; otherwise fall back to the default Downloads path.
+        target_dir = save_folder if save_folder and os.path.isdir(save_folder) else DEFAULT_OUTPUT
+
         # Build filename: include clip range so different clips from the same video don't overwrite
         base_filename = "%(uploader)s - %(title)s"
         if clip_start is not None and clip_end is not None:
             base_filename += f" [{self._format_time(int(clip_start))}-{self._format_time(int(clip_end))}]"
-        outtmpl = os.path.join(DEFAULT_OUTPUT, base_filename + ".%(ext)s")
-        os.makedirs(DEFAULT_OUTPUT, exist_ok=True)
+        outtmpl = os.path.join(target_dir, base_filename + ".%(ext)s")
+        os.makedirs(target_dir, exist_ok=True)
 
         def hook(d):
             if d['status'] == 'downloading':
@@ -153,6 +184,7 @@ def main():
     window.expose(api.get_video_info)
     window.expose(api.select_folder)
     window.expose(api.start_download)
+    window.expose(api.get_settings)
     api.window = window
     webview.start()
 
