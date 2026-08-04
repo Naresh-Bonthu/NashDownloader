@@ -147,9 +147,14 @@
                         oninput="onUrlChanged(this.value)"
                         class="w-full bg-[#1C1C1E] border border-white/[0.05] text-white placeholder-[#68686F] rounded-[12px] px-3.5 py-3 text-[13px] focus:outline-none focus:border-[#0A84FF] focus:ring-1 focus:ring-[#0A84FF]/30 transition shadow-inner resize-none h-24"
                         style="font-family: 'Courier New', monospace;"></textarea>
-                    <button onclick="pasteClipboard()" class="absolute right-2 bottom-2 px-3 py-1.5 bg-[#0A84FF] hover:bg-[#0071E3] text-white font-medium text-[11px] rounded-[8px] transition">
-                        Paste
-                    </button>
+                    <div class="absolute right-2 bottom-2 flex items-center space-x-2">
+                        <button onclick="pullFromClipboard()" class="px-3 py-1.5 bg-[#34C759] hover:bg-[#30B050] text-white font-medium text-[11px] rounded-[8px] transition" title="Auto-detect YouTube/Instagram links from clipboard">
+                            Pull
+                        </button>
+                        <button onclick="pasteClipboard()" class="px-3 py-1.5 bg-[#0A84FF] hover:bg-[#0071E3] text-white font-medium text-[11px] rounded-[8px] transition">
+                            Paste
+                        </button>
+                    </div>
                 </div>
                 <div id="fetch-status" class="flex items-center space-x-2 text-[11px] text-[#B5B5BC] mt-1.5 hidden">
                     <div class="w-3 h-3 border-2 border-[#0A84FF] border-t-transparent rounded-full animate-spin"></div>
@@ -350,6 +355,25 @@
     <script>
         let isAudioMode = false;
         let videoDuration = 0;
+        let selectedSaveFolder = null; // null = use backend's default Downloads folder
+
+        // Load previously-saved folder (if any) when the app starts
+        window.addEventListener('pywebviewready', () => {
+            window.pywebview.api.get_settings().then(settings => {
+                if (settings && settings.save_folder) {
+                    selectedSaveFolder = settings.save_folder;
+                    updateFolderDisplays(settings.save_folder);
+                }
+            });
+        });
+
+        function updateFolderDisplays(path) {
+            // Keep both the main Save Location card and the Settings tab in sync
+            const mainPath = document.getElementById('save-folder-path');
+            const settingsPath = document.getElementById('settings-folder');
+            if (mainPath) mainPath.innerText = path;
+            if (settingsPath) settingsPath.innerText = path;
+        }
 
         // Tab switching functionality
         function switchTab(tabName) {
@@ -483,12 +507,47 @@
             } catch (err) { console.error('Failed to read clipboard'); }
         }
 
+        async function pullFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                // Extract YouTube and Instagram links from clipboard text
+                const urlRegex = /(https?:\/\/(www\.)?(youtube\.com|youtu\.be|instagram\.com|youtube\.co\.in)[^\s]*)/gi;
+                const urls = text.match(urlRegex) || [];
+                
+                if (urls.length === 0) {
+                    alert("No YouTube or Instagram links found in clipboard");
+                    return;
+                }
+
+                // Remove duplicates
+                const uniqueUrls = [...new Set(urls)];
+                
+                const urlInput = document.getElementById('url-input');
+                const existing = urlInput.value.trim();
+                
+                // Append unique URLs on new lines
+                const newUrls = existing ? existing + '\n' + uniqueUrls.join('\n') : uniqueUrls.join('\n');
+                urlInput.value = newUrls;
+                
+                // Trigger preview fetch for first URL
+                onUrlChanged(urlInput.value);
+                
+                // Show feedback
+                alert(`✓ Found and pulled ${uniqueUrls.length} link${uniqueUrls.length > 1 ? 's' : ''}`);
+            } catch (err) { 
+                console.error('Failed to read clipboard');
+                alert('Failed to read clipboard. Make sure the app has clipboard permission.');
+            }
+        }
+
         function changeFolder() {
             if (window.pywebview) {
                 window.pywebview.api.select_folder().then(path => {
                     if(path) {
+                        selectedSaveFolder = path; // this is what actually gets used by downloads now
                         document.getElementById('save-folder-path').innerText = path;
                         document.getElementById('save-folder-name').innerText = path.split('\\').pop() || path;
+                        updateFolderDisplays(path);
                     }
                 });
             }
@@ -572,7 +631,8 @@
                             current.audioMode,
                             current.quality,
                             current.clipStart,
-                            current.clipEnd
+                            current.clipEnd,
+                            selectedSaveFolder
                         );
                     }
                 });
