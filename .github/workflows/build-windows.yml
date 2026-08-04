@@ -51,6 +51,7 @@ jobs:
         run: |
           pyinstaller --noconfirm --onefile --windowed `
             --name "NashDownloader" `
+            --icon "logo.png" `
             --add-data "index.html:." `
             --add-data "logo.png:." `
             --add-binary "ffmpeg_bin\ffmpeg.exe:ffmpeg_bin" `
