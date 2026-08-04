@@ -76,11 +76,16 @@ jobs:
           }
           Write-Output "✓ All required files found"
 
+      - name: Convert logo.png to .ico for the exe icon
+        run: |
+          pip install pillow
+          python -c "from PIL import Image; img = Image.open('logo.png'); img.save('logo.ico', sizes=[(16,16),(32,32),(48,48),(64,64),(128,128),(256,256)])"
+
       - name: Build exe
         run: |
           pyinstaller --noconfirm --onefile --windowed `
             --name "NashDownloader" `
-            --icon "logo.png" `
+            --icon "logo.ico" `
             --add-data "index.html:." `
             --add-data "logo.png:." `
             --add-binary "ffmpeg_bin\ffmpeg.exe:ffmpeg_bin" `
@@ -92,4 +97,3 @@ jobs:
         with:
           name: NashDownloader-windows
           path: dist/NashDownloader.exe
-          
